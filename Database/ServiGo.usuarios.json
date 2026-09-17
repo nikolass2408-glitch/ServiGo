@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "6aaa107492bc0fd32241c027"
+  },
+  "username": "usuario_prueba",
+  "nombre": "Usuario",
+  "apellido": "Prueba",
+  "correo": "prueba@servigo.com",
+  "telefono": "3000000000",
+  "rol": "CLI",
+  "activo": true
+}]
