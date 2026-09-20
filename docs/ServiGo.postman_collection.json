@@ -1,0 +1,38 @@
+{
+  "info": {
+    "name": "ServiGo API",
+    "_postman_id": "servigo-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:3000/api"},
+    {"key": "token", "value": ""},
+    {"key": "profesionalId", "value": ""},
+    {"key": "servicioId", "value": ""},
+    {"key": "reservaId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "API health",
+      "request": {"method": "GET", "url": "{{baseUrl}}/"}
+    },
+    {
+      "name": "Registro",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"username\":\"cliente1\",\"email\":\"cliente1@example.com\",\"password\":\"Clave1234\",\"firstName\":\"Cliente\",\"lastName\":\"Prueba\",\"rol\":\"CLI\",\"telefono\":\"3000000000\"}"},
+        "url": "{{baseUrl}}/registro/"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"username\":\"cliente1\",\"password\":\"Clave1234\"}"},
+        "url": "{{baseUrl}}/login/"
+      }
+    }
+  ]
+}
