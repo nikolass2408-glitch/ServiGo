@@ -1,0 +1,14 @@
+[{
+  "_id": {
+    "$oid": "6aaa196192bc0fd32241c02c"
+  },
+  "usuario_id": "6aaa196192bc0fd32241c02c",
+  "tipo_negocio": "BARBERIA",
+  "nombre_negocio": "Barbería ServiGo",
+  "descripcion": "Barbería para caballeros",
+  "telefono": "3000000000",
+  "direccion": "Bogotá",
+  "imagen": "",
+  "enlace_personalizado": "barberia-servigo",
+  "activo": true
+}]

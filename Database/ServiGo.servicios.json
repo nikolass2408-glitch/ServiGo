@@ -1,0 +1,11 @@
+[{
+  "_id": {
+    "$oid": "6aaa1c0d92bc0fd32241c031"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "nombre": "Corte de cabello",
+  "descripcion": "Corte tradicional",
+  "precio": 25000,
+  "duracion": 30,
+  "activo": true
+}]
