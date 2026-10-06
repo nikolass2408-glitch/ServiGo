@@ -10,4 +10,7 @@ router.post("/registro/", AuthController.registrar);
 router.post("/login/", AuthController.login);
 router.post("/recuperar-password/", AuthController.solicitarRecuperacion);
 router.post("/restablecer-password/", AuthController.restablecerPassword);
+router.get("/perfil/", authenticateToken, AuthController.perfil);
+router.patch("/perfil/", authenticateToken, AuthController.modificarPerfil);
+router.patch("/usuarios/:id/", authenticateToken, authorizeRoles(ROLES.ADMIN), AuthController.cambiarEstadoUsuario);
 export default router;

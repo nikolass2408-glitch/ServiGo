@@ -91,6 +91,32 @@ export class MailService {
     console.log(`[MAIL] Confirmación enviada a ${datos.to}`);
   }
 
+  static async enviarRecordatorioReserva(datos: DatosReservaCorreo) {
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      console.warn("[MAIL] MAIL_USER o MAIL_PASS no configurados. No se envió el recordatorio por correo.");
+      return;
+    }
+    if (!datos.to) {
+      console.warn("[MAIL] La reserva no tiene correo de destino para el recordatorio.");
+      return;
+    }
+
+    const detalles = [
+      `Servicio: ${datos.servicio}`,
+      datos.profesional ? `Profesional: ${datos.profesional}` : null,
+      `Fecha: ${datos.fecha}`,
+      datos.hora ? `Hora: ${datos.hora}` : null,
+    ].filter(Boolean).join("\n");
+
+    await this.crearTransporter().sendMail({
+      from: process.env.MAIL_FROM || process.env.MAIL_USER,
+      to: datos.to,
+      subject: "Recordatorio de cita - ServiGo",
+      text: `Hola ${datos.nombreCliente}, te recordamos tu cita dentro de una hora.\n\n${detalles}`,
+    });
+    console.log(`[MAIL] Recordatorio enviado a ${datos.to}`);
+  }
+
   static async enviarEnlaceRecuperacion(to: string, nombre: string, url: string) {
     if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
       console.warn("[MAIL] MAIL_USER o MAIL_PASS no configurados. No se envió el correo.");

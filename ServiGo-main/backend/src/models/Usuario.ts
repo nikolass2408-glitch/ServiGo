@@ -9,6 +9,7 @@ export interface IUsuario extends Document {
   lastName: string;
   rol: Role;
   telefono?: string;
+  activo: boolean;
   passwordResetTokenHash?: string;
   passwordResetExpiresAt?: Date;
   createdAt: Date;
@@ -26,6 +27,7 @@ const usuarioSchema = new Schema<IUsuario>(
     lastName: { type: String, default: "", trim: true },
     rol: { type: String, enum: Object.values(ROLES), default: ROLES.CLI },
     telefono: { type: String, default: "" },
+    activo: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

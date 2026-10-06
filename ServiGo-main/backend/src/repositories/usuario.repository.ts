@@ -8,6 +8,25 @@ export class UsuarioRepository {
   static buscarPorId(id: string) {
     return Usuario.findById(id).select("-password");
   }
+  static actualizarPerfil(id: string, data: Partial<IUsuario>) {
+    return Usuario.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+  }
+  static cambiarEstado(id: string, activo: boolean) {
+    return Usuario.findByIdAndUpdate(
+      id,
+      { activo },
+      { new: true, runValidators: true }
+    ).select("-password");
+  }
+  static contar() {
+    return Usuario.countDocuments();
+  }
+  static contarPorRol(rol: string) {
+    return Usuario.countDocuments({ rol });
+  }
   static buscarPorUsername(username: string, incluirPassword = false) {
     const query = Usuario.findOne({ username });
     return incluirPassword ? query.select("+password") : query;

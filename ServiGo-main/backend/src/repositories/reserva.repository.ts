@@ -2,6 +2,12 @@ import { Reserva } from "../models/Reserva";
 import { ESTADOS_RESERVA } from "../data/estadosReserva";
 
 export class ReservaRepository {
+  static contar() {
+    return Reserva.countDocuments();
+  }
+  static contarCompletadas() {
+    return Reserva.countDocuments({ estado: ESTADOS_RESERVA.COMPLETADA });
+  }
   static listarTodas() {
     return Reserva.find()
       .populate("profesional")
@@ -55,7 +61,45 @@ export class ReservaRepository {
       profesional: profesionalId,
       fecha,
       estado: { $nin: [ESTADOS_RESERVA.CANCELADA, ESTADOS_RESERVA.RECHAZADA] }
-    }).sort({ hora: 1 });
+    }).populate("servicio").sort({ hora: 1 });
+  }
+  static proximasActivas(fechaInicio: string, fechaFin: string) {
+    return Reserva.find({
+      estado: {
+        $in: [
+          ESTADOS_RESERVA.PENDIENTE,
+          ESTADOS_RESERVA.CONFIRMADA,
+          ESTADOS_RESERVA.REPROGRAMADA,
+        ],
+      },
+      fecha: { $gte: fechaInicio, $lte: fechaFin },
+    })
+      .populate("profesional")
+      .populate("servicio")
+      .populate("cliente", "-password")
+      .lean();
+  }
+  static async existeConflictoPorDuracion(
+    profesionalId: string,
+    fecha: string,
+    hora: string,
+    duracionMinutos: number,
+    excluirId?: string
+  ) {
+    const aMinutos = (valor: string) => {
+      const [horas, minutos] = valor.split(":").map(Number);
+      return horas * 60 + minutos;
+    };
+    const inicioSolicitado = aMinutos(hora);
+    const finSolicitado = inicioSolicitado + duracionMinutos;
+    const reservas = await this.delDiaExcluyendoCanceladas(profesionalId, fecha);
+
+    return reservas.some((reserva: any) => {
+      if (excluirId && reserva._id.toString() === excluirId) return false;
+      const inicioExistente = aMinutos(reserva.hora);
+      const finExistente = inicioExistente + Number(reserva.servicio?.duracion || 30);
+      return inicioSolicitado < finExistente && finSolicitado > inicioExistente;
+    });
   }
   static porProfesionalYEstado(profesionalId: string, estado: string) {
     return Reserva.find({ profesional: profesionalId, estado });

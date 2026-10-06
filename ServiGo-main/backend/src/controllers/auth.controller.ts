@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../services/auth.service";
 import { UsuarioRepository } from "../repositories/usuario.repository";
+import { ProfesionalRepository } from "../repositories/profesional.repository";
+import { ProfesionalService } from "../services/profesional.service";
+import { AuthRequest } from "../middlewares/auth.middleware";
 
 export class AuthController {
   static async listarUsuarios(req: Request, res: Response, next: NextFunction) {
@@ -64,5 +67,49 @@ export class AuthController {
   static async restablecerPassword(req: Request, res: Response) {
     await AuthService.restablecerPassword(req.body?.token, req.body?.password);
     res.json({ message: "Contraseña actualizada. Ya puedes iniciar sesión." });
+  }
+
+  static async perfil(req: AuthRequest, res: Response) {
+    const usuario = await UsuarioRepository.buscarPorId(String(req.user?.id));
+    if (!usuario) {
+      res.status(404).json({ error: "Usuario no encontrado." });
+      return;
+    }
+    const profesional = usuario.rol === "PRO"
+      ? await ProfesionalRepository.buscarPorUsuario(usuario._id.toString())
+      : null;
+    res.json({
+      usuario: AuthService.publicUser(usuario),
+      profesional,
+    });
+  }
+
+  static async modificarPerfil(req: AuthRequest, res: Response) {
+    const usuarioId = String(req.user?.id);
+    const usuario = await AuthService.actualizarPerfil(usuarioId, req.body || {});
+    let profesional = null;
+    if (req.body?.profesional) {
+      const existente = await ProfesionalRepository.buscarPorUsuario(usuarioId);
+      profesional = existente
+        ? await ProfesionalService.modificar(
+            existente._id.toString(),
+            req.body.profesional,
+            req.user
+          )
+        : await ProfesionalService.crear(req.body.profesional, req.user);
+    } else if (req.user?.rol === "PRO") {
+      profesional = await ProfesionalRepository.buscarPorUsuario(usuarioId);
+    }
+    res.json({ usuario, profesional });
+  }
+
+  static async cambiarEstadoUsuario(req: AuthRequest, res: Response) {
+    res.json(
+      await AuthService.cambiarEstado(
+        String(req.params.id),
+        req.body?.activo,
+        String(req.user?.id)
+      )
+    );
   }
 }

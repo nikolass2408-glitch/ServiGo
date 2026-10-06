@@ -5,11 +5,14 @@ type AccionReserva = "confirmar" | "cancelar" | "reprogramar";
 const ESTADOS_MODIFICABLES = [
   ESTADOS_RESERVA.PENDIENTE,
   ESTADOS_RESERVA.CONFIRMADA,
+  ESTADOS_RESERVA.REPROGRAMADA,
 ];
 
 export function validarAccionReserva(estado: string, accion: AccionReserva) {
   const puedeConfirmar =
-    accion === "confirmar" && estado === ESTADOS_RESERVA.PENDIENTE;
+    accion === "confirmar" &&
+    (estado === ESTADOS_RESERVA.PENDIENTE ||
+      estado === ESTADOS_RESERVA.REPROGRAMADA);
   const puedeModificar =
     ["cancelar", "reprogramar"].includes(accion) &&
     ESTADOS_MODIFICABLES.includes(estado as (typeof ESTADOS_MODIFICABLES)[number]);
@@ -49,6 +52,13 @@ export function validarHorarioDisponible(existeConflicto: boolean) {
       { statusCode: 409 }
     );
   }
+}
+
+export function calcularMinutosOcupados(hora: string, duracionMinutos: number) {
+  const [horas, minutos] = hora.split(":").map(Number);
+  const inicio = horas * 60 + minutos;
+  const fin = inicio + Math.ceil(duracionMinutos);
+  return Array.from({ length: fin - inicio }, (_, indice) => inicio + indice);
 }
 
 export function validarFechaHoraReserva(

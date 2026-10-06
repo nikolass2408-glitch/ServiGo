@@ -1,10 +1,54 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Calendar, Clock, CheckCircle } from 'lucide-react';
+import API from '../services/api';
 
 export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [exito, setExito] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [cargandoDisponibilidad, setCargandoDisponibilidad] = useState(false);
+  const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+  const [errorDisponibilidad, setErrorDisponibilidad] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!fecha || !servicio) {
+      setHorariosDisponibles([]);
+      return;
+    }
+
+    const profesionalId = servicio.profesionalId ||
+      (typeof servicio.profesional === 'object' && (servicio.profesional._id || servicio.profesional.id));
+    const servicioId = servicio.id || servicio._id;
+    if (!profesionalId || !servicioId) {
+      setErrorDisponibilidad('No se pudo identificar el servicio para consultar horarios.');
+      return;
+    }
+
+    let active = true;
+    setCargandoDisponibilidad(true);
+    setErrorDisponibilidad('');
+    API.get('/reservas/disponibilidad/', {
+      params: { profesional: profesionalId, fecha, servicio: servicioId }
+    }).then(({ data }) => {
+      if (!active) return;
+      const item = data.servicios?.find((entry) =>
+        String(entry.servicio.id || entry.servicio._id) === String(servicioId)
+      );
+      setHorariosDisponibles(item?.horariosDisponibles || []);
+      setHora('');
+    }).catch((requestError) => {
+      if (active) {
+        setHorariosDisponibles([]);
+        setErrorDisponibilidad(requestError.response?.data?.error || 'No se pudo consultar la disponibilidad.');
+      }
+    }).finally(() => {
+      if (active) setCargandoDisponibilidad(false);
+    });
+
+    return () => { active = false; };
+  }, [fecha, servicio]);
 
   if (!servicio) return null;
 
@@ -19,37 +63,22 @@ export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
     return `${año}-${mes}-${dia}`;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validar fecha
-    if (!fecha) {
-      alert('Por favor selecciona una fecha.');
-      return;
+    setCargando(true);
+    setError('');
+    try {
+      await onConfirmar({ fecha, hora });
+      setExito(true);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.error ||
+        requestError.message ||
+        'No se pudo crear la reserva.'
+      );
+    } finally {
+      setCargando(false);
     }
-
-    // Validar hora
-    if (!hora) {
-      alert('Por favor selecciona una hora.');
-      return;
-    }
-
-    setExito(true);
-
-    // Notificamos al componente padre después de 1.5 segundos
-    setTimeout(() => {
-      onConfirmar({
-        id: Date.now(),
-        servicio: servicio.nombre,
-        profesional: servicio.profesional,
-        fecha,
-        hora,
-        estado: 'Pendiente',
-        precio: servicio.precio
-      });
-
-      onClose();
-    }, 1500);
   };
 
   return (
@@ -120,17 +149,28 @@ export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
                   Hora de la cita
                 </label>
 
-                <input
-                  type="time"
+                <select
                   value={hora}
                   onChange={(e) => setHora(e.target.value)}
                   required
+                  disabled={cargandoDisponibilidad || horariosDisponibles.length === 0}
                   style={styles.input}
-                />
+                >
+                  <option value="">
+                    {cargandoDisponibilidad ? 'Consultando horarios...' : 'Selecciona un horario'}
+                  </option>
+                  {horariosDisponibles.map((horario) => (
+                    <option key={horario} value={horario}>{horario}</option>
+                  ))}
+                </select>
 
                 <span style={styles.helperText}>
-                  Selecciona la hora que prefieras.
+                  Duración aproximada: {servicio.duracion || `${servicio.duracionMinutos} min`}.
                 </span>
+                {errorDisponibilidad && <span role="alert" style={styles.error}>{errorDisponibilidad}</span>}
+                {!cargandoDisponibilidad && fecha && !errorDisponibilidad && horariosDisponibles.length === 0 && (
+                  <span style={styles.error}>No hay horarios disponibles para esta fecha.</span>
+                )}
 
               </div>
 
@@ -182,15 +222,17 @@ export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
 
               </div>
 
+              {error && <p role="alert" style={styles.error}>{error}</p>}
 
               {/* =========================
                   CONFIRMAR
               ========================== */}
               <button
                 type="submit"
+                disabled={cargando}
                 style={styles.btnSubmit}
               >
-                Confirmar Reserva
+                {cargando ? 'Enviando solicitud...' : 'Solicitar reserva'}
               </button>
 
             </form>
@@ -213,7 +255,7 @@ export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
             </h4>
 
             <p style={styles.successText}>
-              Tu solicitud ha sido enviada al profesional.
+              Tu solicitud ha sido enviada al profesional y está pendiente de confirmación.
             </p>
 
             <div style={styles.successDetails}>
@@ -357,6 +399,15 @@ const styles = {
   helperText: {
     fontSize: '11px',
     color: '#6b7280'
+  },
+
+  error: {
+    margin: 0,
+    padding: '10px 12px',
+    borderRadius: '8px',
+    backgroundColor: '#fef2f2',
+    color: '#b91c1c',
+    fontSize: '13px'
   },
 
 

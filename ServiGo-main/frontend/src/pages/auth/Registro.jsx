@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -60,7 +60,7 @@ export default function Registro() {
     try {
       const correo = email.trim().toLowerCase();
 
-      const response = await API.post('/registro/', {
+      await API.post('/registro/', {
         username: correo, // el correo se usa como usuario para iniciar sesión
         nombre,
         email: correo,
@@ -69,11 +69,9 @@ export default function Registro() {
         rol: tipoCuenta // 'cliente' o 'profesional'
       });
 
-      console.log('Registro OK:', response.data);
       alert('¡Registro exitoso!');
       navigate('/login');
     } catch (err) {
-      console.error('ERROR REGISTRO:', err.response?.data || err);
       setError(
         err.response?.data?.error ||
           'No fue posible registrar el usuario.'
@@ -572,4 +570,3 @@ const styles = {
     textDecoration: 'none'
   }
 };
-

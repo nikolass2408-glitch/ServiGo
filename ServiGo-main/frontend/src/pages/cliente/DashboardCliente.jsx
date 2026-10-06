@@ -8,16 +8,17 @@ import {
   LogOut,
   Eye,
   X,
-  CheckCircle,
   RefreshCw,
   Ban
 } from 'lucide-react';
 
-import { serviciosMock } from '../../services/mockData';
 import { useAuth } from '../../context/AuthContext';
 import ModalAgendar from '../../components/ModalAgendar';
 import BrandMark from '../../components/BrandMark';
 import { bookingService } from '../../services/bookingService';
+import API from '../../services/api';
+import PerfilPanel from '../../components/PerfilPanel';
+import ClientNotifications from '../../components/ClientNotifications';
 
 const normalizarReserva = (reserva) => {
   const servicio = typeof reserva.servicio === 'object' ? reserva.servicio : {};
@@ -56,7 +57,7 @@ export default function DashboardCliente() {
     user?.username ||
     'Cliente';
 
-  const [servicios] = useState(serviciosMock);
+  const [servicios, setServicios] = useState([]);
   const [reservas, setReservas] = useState([]);
   const [cargandoReservas, setCargandoReservas] = useState(true);
   const [errorReservas, setErrorReservas] = useState('');
@@ -84,6 +85,39 @@ export default function DashboardCliente() {
   useEffect(() => {
     let activo = true;
 
+    Promise.all([API.get('/servicios/'), API.get('/profesionales/')])
+      .then(([serviciosResponse, profesionalesResponse]) => {
+        if (!activo) return;
+        const profesionales = profesionalesResponse.data;
+        setServicios(serviciosResponse.data.map((servicio) => {
+          const profesionalId = typeof servicio.profesional === 'object'
+            ? servicio.profesional._id || servicio.profesional.id
+            : servicio.profesional;
+          const profesional = profesionales.find((item) =>
+            (item._id || item.id) === profesionalId
+          );
+          return {
+            id: servicio._id || servicio.id,
+            profesionalId,
+            nombre: servicio.nombre,
+            categoria: servicio.categoria || profesional?.tipoNegocio || 'Servicios',
+            profesional: profesional?.nombreNegocio || 'Profesional ServiGo',
+            precio: Number(servicio.precio || 0),
+            duracion: `${Number(servicio.duracion || 0)} min`,
+            duracionMinutos: Number(servicio.duracion || 0),
+            ubicacion: profesional?.direccion || '',
+            descripcion: servicio.descripcion || ''
+          };
+        }));
+      })
+      .catch((error) => {
+        if (activo) {
+          setErrorReservas(
+            error.response?.data?.error || 'No se pudieron cargar los servicios.'
+          );
+        }
+      });
+
     bookingService.getReservas()
       .then((data) => {
         if (activo) setReservas(data.map(normalizarReserva));
@@ -105,8 +139,15 @@ export default function DashboardCliente() {
   }, []);
 
   // Cuando se crea una nueva reserva
-  const handleNuevaReserva = (nuevaReserva) => {
+  const handleNuevaReserva = async (datosReserva) => {
+    const nuevaReserva = await bookingService.crearReserva({
+      servicio: servicioSeleccionado.id,
+      profesional: servicioSeleccionado.profesionalId,
+      fecha: datosReserva.fecha,
+      hora: datosReserva.hora
+    });
     setReservas((actuales) => [normalizarReserva(nuevaReserva), ...actuales]);
+    return nuevaReserva;
   };
 
   const abrirReserva = (reserva) => {
@@ -133,9 +174,7 @@ export default function DashboardCliente() {
 
     try {
       let respuesta;
-      if (accion === 'confirmar') {
-        respuesta = await bookingService.confirmarReserva(reservaSeleccionada.id);
-      } else if (accion === 'cancelar') {
+      if (accion === 'cancelar') {
         respuesta = await bookingService.cancelarReserva(reservaSeleccionada.id);
       } else {
         respuesta = await bookingService.reprogramarReserva(
@@ -148,9 +187,7 @@ export default function DashboardCliente() {
       actualizarReserva(respuesta);
       setMostrarReprogramacion(false);
       setMensajeAccion(
-        accion === 'confirmar'
-          ? 'Cita confirmada.'
-          : accion === 'cancelar'
+        accion === 'cancelar'
             ? 'Cita cancelada.'
             : 'Cita reprogramada.'
       );
@@ -165,7 +202,7 @@ export default function DashboardCliente() {
 
   const estadoSeleccionado = reservaSeleccionada?.estadoCode ||
     String(reservaSeleccionada?.estado || '').toUpperCase();
-  const citaActiva = ['PENDIENTE', 'CONFIRMADA'].includes(estadoSeleccionado);
+  const citaActiva = ['PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA'].includes(estadoSeleccionado);
 
   const iniciarReprogramacion = () => {
     const hora = String(reservaSeleccionada?.hora || '');
@@ -225,6 +262,8 @@ export default function DashboardCliente() {
           CONTENIDO PRINCIPAL
       ========================== */}
       <main style={styles.content}>
+
+        <PerfilPanel />
 
         {/* =========================
             MIS RESERVAS ACTIVAS
@@ -342,6 +381,7 @@ export default function DashboardCliente() {
 
         </section>
 
+        <ClientNotifications userId={user?.id} bookings={reservas} />
 
         {/* =========================
             EXPLORAR SERVICIOS
@@ -648,17 +688,6 @@ export default function DashboardCliente() {
               </form>
             ) : (
               <div style={styles.reservationActions}>
-                {estadoSeleccionado === 'PENDIENTE' && (
-                  <button
-                    type="button"
-                    style={{ ...styles.actionButton, ...styles.actionPrimary }}
-                    onClick={() => ejecutarAccionReserva('confirmar')}
-                    disabled={Boolean(accionEnCurso)}
-                  >
-                    <CheckCircle size={15} />
-                    {accionEnCurso === 'confirmar' ? 'Confirmando...' : 'Confirmar cita'}
-                  </button>
-                )}
                 {citaActiva && (
                   <>
                     <button

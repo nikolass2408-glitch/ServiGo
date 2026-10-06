@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Calendar,
   CheckCircle,
@@ -13,6 +12,9 @@ import {
 } from 'lucide-react';
 
 import { bookingService } from '../../services/bookingService';
+import { useAuth } from '../../context/AuthContext';
+import PerfilPanel from '../../components/PerfilPanel';
+import ProfessionalWorkspace from '../../components/ProfessionalWorkspace';
 import BrandMark from '../../components/BrandMark';
 
 const normalizarCita = (cita) => {
@@ -29,6 +31,8 @@ const normalizarCita = (cita) => {
 };
 
 export default function DashboardProfesional() {
+  const { user, logout } = useAuth();
+  const [profileRevision, setProfileRevision] = useState(0);
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -81,6 +85,10 @@ export default function DashboardProfesional() {
       let respuesta;
       if (accion === 'confirmar') {
         respuesta = await bookingService.confirmarReserva(cita._id);
+      } else if (accion === 'rechazar') {
+        respuesta = await bookingService.rechazarReserva(cita._id);
+      } else if (accion === 'completar') {
+        respuesta = await bookingService.completarReserva(cita._id);
       } else if (accion === 'cancelar') {
         respuesta = await bookingService.cancelarReserva(cita._id);
       } else {
@@ -102,6 +110,10 @@ export default function DashboardProfesional() {
       setMensajeAccion(
         accion === 'confirmar'
           ? 'Cita confirmada.'
+          : accion === 'rechazar'
+            ? 'Solicitud rechazada.'
+            : accion === 'completar'
+              ? 'Cita marcada como completada.'
           : accion === 'cancelar'
             ? 'Cita cancelada.'
             : 'Cita reprogramada.'
@@ -150,7 +162,7 @@ export default function DashboardProfesional() {
     });
   };
 
-  const citasActivas = ['PENDIENTE', 'CONFIRMADA'].includes(
+  const citasActivas = ['PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA'].includes(
     reservaSeleccionada?.estadoCode
   );
 
@@ -185,9 +197,7 @@ export default function DashboardProfesional() {
 
   const ingresos = citas
     .filter(
-      (cita) =>
-        cita.estado !== 'Cancelada' &&
-        cita.estado !== 'Rechazada'
+      (cita) => cita.estadoCode === 'COMPLETADA'
     )
     .reduce((total, cita) => {
       return (
@@ -217,16 +227,13 @@ export default function DashboardProfesional() {
         <div style={styles.userMenu}>
 
           <span style={styles.userName}>
-            Barbería El Elegante
+            {user?.firstName || 'Profesional'}
           </span>
 
-          <Link
-            to="/"
-            style={styles.btnLogout}
-          >
+          <button type="button" onClick={logout} style={styles.btnLogout}>
             <LogOut size={16} />
             Salir
-          </Link>
+          </button>
 
         </div>
 
@@ -247,6 +254,8 @@ export default function DashboardProfesional() {
           </p>
         </div>
 
+        <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
+        <ProfessionalWorkspace key={profileRevision} user={user} />
 
         {/* ERROR */}
 
@@ -646,7 +655,7 @@ export default function DashboardProfesional() {
                 </form>
               ) : (
                 <div style={styles.modalActions}>
-                  {reservaSeleccionada.estadoCode === 'PENDIENTE' && (
+                  {['PENDIENTE', 'REPROGRAMADA'].includes(reservaSeleccionada.estadoCode) && (
                     <button
                       type="button"
                       style={{ ...styles.actionButton, ...styles.actionPrimary }}
@@ -655,6 +664,28 @@ export default function DashboardProfesional() {
                     >
                       <CheckCircle size={15} />
                       {accionEnCurso === 'confirmar' ? 'Confirmando...' : 'Confirmar cita'}
+                    </button>
+                  )}
+                  {['PENDIENTE', 'REPROGRAMADA'].includes(reservaSeleccionada.estadoCode) && (
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionDanger }}
+                      onClick={() => ejecutarAccionReserva('rechazar')}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <X size={15} />
+                      {accionEnCurso === 'rechazar' ? 'Rechazando...' : 'Rechazar'}
+                    </button>
+                  )}
+                  {reservaSeleccionada.estadoCode === 'CONFIRMADA' && (
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionPrimary }}
+                      onClick={() => ejecutarAccionReserva('completar')}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <CheckCircle size={15} />
+                      {accionEnCurso === 'completar' ? 'Actualizando...' : 'Marcar completada'}
                     </button>
                   )}
                   {citasActivas && (
@@ -739,7 +770,9 @@ const styles = {
     alignItems: 'center',
     gap: '5px',
     color: '#ef4444',
-    textDecoration: 'none'
+    background: 'transparent',
+    border: 0,
+    cursor: 'pointer'
   },
 
   content: {

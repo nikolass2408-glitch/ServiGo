@@ -3,6 +3,7 @@ import test from "node:test";
 import { ESTADOS_RESERVA } from "../data/estadosReserva";
 import {
   validarAccionReserva,
+  calcularMinutosOcupados,
   validarFechaHoraReserva,
   validarHorarioDisponible,
   validarPropiedadReserva,
@@ -12,6 +13,12 @@ import {
 test("permite confirmar una cita pendiente", () => {
   assert.doesNotThrow(() =>
     validarAccionReserva(ESTADOS_RESERVA.PENDIENTE, "confirmar")
+  );
+});
+
+test("permite confirmar una cita reprogramada", () => {
+  assert.doesNotThrow(() =>
+    validarAccionReserva(ESTADOS_RESERVA.REPROGRAMADA, "confirmar")
   );
 });
 
@@ -118,4 +125,8 @@ test("rechaza al prestador modificar una cita de otro perfil", () => {
 test("devuelve conflicto cuando el horario ya está ocupado", () => {
   assert.throws(() => validarHorarioDisponible(true), { statusCode: 409 });
   assert.doesNotThrow(() => validarHorarioDisponible(false));
+});
+
+test("calcula cada minuto ocupado sin incluir el final de la reserva", () => {
+  assert.deepEqual(calcularMinutosOcupados("09:30", 45), Array.from({ length: 45 }, (_, indice) => 570 + indice));
 });

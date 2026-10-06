@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Login from '../pages/auth/Login';
 import Registro from '../pages/auth/Registro';
 import RecuperarPassword from '../pages/auth/RecuperarPassword';
+import PublicProfessional from '../pages/PublicProfessional';
 
 import DashboardCliente from '../pages/cliente/DashboardCliente';
 import DashboardProfesional from '../pages/profesional/DashboardProfesional';
@@ -57,6 +58,11 @@ export default function AppRoutes() {
       <Route
         path="/recuperar-password"
         element={<RecuperarPassword />}
+      />
+
+      <Route
+        path="/p/:slug"
+        element={<PublicProfessional />}
       />
 
       {/* ========================= */}
