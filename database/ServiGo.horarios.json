@@ -1,0 +1,10 @@
+[{
+  "_id": {
+    "$oid": "6aaa1f3e92bc0fd32241c036"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "dia": "LUNES",
+  "hora_inicio": "08:00",
+  "hora_fin": "18:00",
+  "activo": true
+}]

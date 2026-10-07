@@ -1,0 +1,48 @@
+[{
+  "_id": {
+    "$oid": "6aaa21fa62972bb1f6d7bfd9"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "servicio_id": "6aaa1c0d92bc0fd32241c031",
+  "cliente_id": "6aaa107492bc0fd32241c027",
+  "fecha": "2026-09-15",
+  "hora": "10:00",
+  "estado": "CONFIRMADA",
+  "notas": "Primera reserva"
+},
+{
+  "_id": {
+    "$oid": "6aaa222162972bb1f6d7bfdb"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "servicio_id": "6aaa1c0d92bc0fd32241c031",
+  "cliente_id": "6aaa107492bc0fd32241c027",
+  "fecha": "2026-09-15",
+  "hora": "10:00",
+  "estado": "PENDIENTE",
+  "notas": "Primera reserva"
+},
+{
+  "_id": {
+    "$oid": "6aaa223262972bb1f6d7bfdd"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "servicio_id": "6aaa1c0d92bc0fd32241c031",
+  "cliente_id": "6aaa107492bc0fd32241c027",
+  "fecha": "2026-09-15",
+  "hora": "10:00",
+  "estado": "CANCELADA",
+  "notas": "Primera reserva"
+},
+{
+  "_id": {
+    "$oid": "6aaa228062972bb1f6d7bfdf"
+  },
+  "profesional_id": "6aaa196192bc0fd32241c02c",
+  "servicio_id": "6aaa1c0d92bc0fd32241c031",
+  "cliente_id": "6aaa107492bc0fd32241c027",
+  "fecha": "2026-09-16",
+  "hora": "14:00",
+  "estado": "PENDIENTE",
+  "notas": "Segunda reserva de prueba"
+}]

@@ -7,6 +7,7 @@ export interface INotificacion extends Document {
   tipo: TipoNotificacion;
   mensaje: string;
   leida: boolean;
+  claveAutomatica?: string;
   creadaEn: Date;
 }
 
@@ -17,8 +18,18 @@ const notificacionSchema = new Schema<INotificacion>(
     tipo: { type: String, enum: Object.values(TIPOS_NOTIFICACION), required: true },
     mensaje: { type: String, required: true },
     leida: { type: Boolean, default: false },
+    claveAutomatica: { type: String },
   },
   { timestamps: { createdAt: "creadaEn", updatedAt: false } }
+);
+
+notificacionSchema.index(
+  { claveAutomatica: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { claveAutomatica: { $exists: true } },
+    name: "automatic_reminder_unique",
+  }
 );
 
 export const Notificacion = model<INotificacion>("Notificacion", notificacionSchema);

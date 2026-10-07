@@ -16,7 +16,8 @@ export class ReservaController {
 
   static async detalle(req: AuthRequest, res: Response) {
     const reserva: any = await ReservaService.buscar(
-      String(req.params.id)
+      String(req.params.id),
+      req.user
     );
 
     res.json(reserva);
@@ -70,14 +71,15 @@ export class ReservaController {
   }
 
   static async historial(req: AuthRequest, res: Response) {
-    res.json(await ReservaService.listar(req.user));
+    res.json(await ReservaService.historial(req.user));
   }
 
   static async disponibilidad(req: AuthRequest, res: Response) {
     res.json(
       await ReservaService.disponibilidad(
         String(req.query.profesional),
-        String(req.query.fecha)
+        String(req.query.fecha),
+        String(req.query.servicio || "")
       )
     );
   }

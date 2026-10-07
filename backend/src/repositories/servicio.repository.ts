@@ -13,4 +13,11 @@ export class ServicioRepository {
   static crear(data: any) {
     return Servicio.create(data);
   }
+  static eliminar(id: string) {
+    return Servicio.findByIdAndUpdate(
+      id,
+      { activo: false },
+      { new: true }
+    );
+  }
 }

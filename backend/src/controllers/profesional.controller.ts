@@ -13,6 +13,9 @@ export class ProfesionalController {
   static async crear(req: AuthRequest, res: Response) {
     res.status(201).json(await ProfesionalService.crear(req.body, req.user));
   }
+  static async modificar(req: AuthRequest, res: Response) {
+    res.json(await ProfesionalService.modificar(String(req.params.id), req.body, req.user));
+  }
   static async clientes(req: AuthRequest, res: Response) {
     const profesional = await ProfesionalRepository.buscarPorId(String(req.params.profesionalId));
     if (!profesional) return res.status(404).json({ error: "Profesional no encontrado." });

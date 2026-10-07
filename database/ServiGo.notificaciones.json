@@ -1,0 +1,10 @@
+[{
+  "_id": {
+    "$oid": "6aaa240e62972bb1f6d7bfe3"
+  },
+  "usuario_id": "6aaa107492bc0fd32241c027",
+  "reserva_id": "ID_DE_LA_RESERVA",
+  "tipo": "RESERVA_CONFIRMADA",
+  "mensaje": "Tu reserva ha sido confirmada",
+  "leida": false
+}]
