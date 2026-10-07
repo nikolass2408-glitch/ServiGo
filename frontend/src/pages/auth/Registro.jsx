@@ -1,134 +1,355 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Mail, Lock, Phone, ArrowLeft, Briefcase, UserCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  ArrowLeft,
+  Briefcase,
+  UserCheck,
+  Check,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+
+import API from '../../services/api';
+import BrandMark from '../../components/BrandMark';
 
 export default function Registro() {
-  // Estado local para seleccionar el tipo de cuenta (Cliente o Profesional)
+  const navigate = useNavigate();
+
   const [tipoCuenta, setTipoCuenta] = useState('cliente');
+
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (password.length < 8) {
+      setError('La contraseña debe tener mínimo 8 caracteres.');
+      return;
+    }
+
+    if (
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/[0-9]/.test(password)
+    ) {
+      setError('La contraseña debe incluir mayúscula, minúscula y número.');
+      return;
+    }
+
+    if (!aceptaTerminos) {
+      setError('Debes aceptar los Términos y Condiciones.');
+      return;
+    }
+
+    setCargando(true);
+
+    try {
+      const correo = email.trim().toLowerCase();
+
+      await API.post('/registro/', {
+        username: correo, // el correo se usa como usuario para iniciar sesión
+        nombre,
+        email: correo,
+        telefono,
+        password,
+        rol: tipoCuenta // 'cliente' o 'profesional'
+      });
+
+      alert('¡Registro exitoso!');
+      navigate('/login');
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+          'No fue posible registrar el usuario.'
+      );
+    } finally {
+      setCargando(false);
+    }
+  };
 
   return (
     <div style={styles.container}>
+
       <div style={styles.card}>
-        
-        {/* BOTÓN REGRESAR AL INICIO */}
+
         <Link to="/" style={styles.backLink}>
-          <ArrowLeft size={16} /> Volver al inicio
+          <ArrowLeft size={16} />
+          Volver al inicio
         </Link>
 
-        {/* ENCABEZADO */}
         <div style={styles.header}>
-          <div style={styles.logoBadge}>S</div>
-          <h2 style={styles.title}>Crea tu cuenta</h2>
-          <p style={styles.subtitle}>Únete a ServiGo y comienza a agendar o prestar servicios</p>
+
+          <BrandMark size={40} style={{ margin: '0 auto 10px' }} />
+
+          <h2 style={styles.title}>
+            Crea tu cuenta
+          </h2>
+
+          <p style={styles.subtitle}>
+            Únete a ServiGo y comienza a agendar o prestar servicios
+          </p>
+
         </div>
 
-        {/* SELECTOR DE TIPO DE USUARIO */}
         <div style={styles.roleSelector}>
-          <button 
+
+          <button
             type="button"
-            style={{
-              ...styles.roleBtn,
-              ...(tipoCuenta === 'cliente' ? styles.roleBtnActive : {})
-            }}
             onClick={() => setTipoCuenta('cliente')}
-          >
-            <UserCheck size={16} /> Soy Cliente
-          </button>
-          
-          <button 
-            type="button"
             style={{
               ...styles.roleBtn,
-              ...(tipoCuenta === 'profesional' ? styles.roleBtnActive : {})
+              ...(tipoCuenta === 'cliente'
+                ? styles.roleBtnActive
+                : {})
             }}
-            onClick={() => setTipoCuenta('profesional')}
           >
-            <Briefcase size={16} /> Soy Profesional
+            <UserCheck size={16} />
+            Soy Cliente
           </button>
+
+          <button
+            type="button"
+            onClick={() => setTipoCuenta('profesional')}
+            style={{
+              ...styles.roleBtn,
+              ...(tipoCuenta === 'profesional'
+                ? styles.roleBtnActive
+                : {})
+            }}
+          >
+            <Briefcase size={16} />
+            Soy Profesional
+          </button>
+
         </div>
 
-        {/* FORMULARIO */}
-        <form onSubmit={(e) => e.preventDefault()} style={styles.form}>
-          
-          {/* CAMPO: NOMBRE COMPLETO */}
+        <form
+          onSubmit={handleSubmit}
+          style={styles.form}
+        >
+
+          {/* NOMBRE */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Nombre completo</label>
+
+            <label style={styles.label}>
+              Nombre completo
+            </label>
+
             <div style={styles.inputWrapper}>
+
               <User size={18} color="#9ca3af" />
-              <input 
-                type="text" 
-                placeholder="Juan Pérez" 
-                style={styles.input} 
-                required 
+
+              <input
+                type="text"
+                placeholder="Juan Pérez"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                style={styles.input}
+                required
               />
+
             </div>
+
           </div>
 
-          {/* CAMPO: CORREO ELECTRÓNICO */}
+          {/* CORREO */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Correo electrónico</label>
+
+            <label style={styles.label}>
+              Correo electrónico
+            </label>
+
             <div style={styles.inputWrapper}>
+
               <Mail size={18} color="#9ca3af" />
-              <input 
-                type="email" 
-                placeholder="ejemplo@correo.com" 
-                style={styles.input} 
-                required 
+
+              <input
+                type="email"
+                placeholder="ejemplo@correo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={styles.input}
+                required
               />
+
             </div>
+
           </div>
 
-          {/* CAMPO: TELÉFONO */}
+          {/* TELEFONO */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Teléfono de contacto</label>
+
+            <label style={styles.label}>
+              Teléfono de contacto
+            </label>
+
             <div style={styles.inputWrapper}>
+
               <Phone size={18} color="#9ca3af" />
-              <input 
-                type="tel" 
-                placeholder="+57 300 000 0000" 
-                style={styles.input} 
-                required 
+
+              <input
+                type="tel"
+                placeholder="+57 300 000 0000"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                style={styles.input}
+                required
               />
+
             </div>
+
           </div>
 
-          {/* CAMPO: CONTRASEÑA */}
+          {/* CONTRASEÑA */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Contraseña</label>
-            <div style={styles.inputWrapper}>
+
+            <label style={styles.label}>
+              Contraseña
+            </label>
+
+            <div style={styles.passwordWrapper}>
+
               <Lock size={18} color="#9ca3af" />
-              <input 
-                type="password" 
-                placeholder="••••••••" 
-                style={styles.input} 
-                required 
+
+              <input
+                type={mostrarPassword ? 'text' : 'password'}
+                placeholder="Mín. 8 caracteres, mayúscula, minúscula y número"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={styles.passwordInput}
+                minLength={8}
+                required
               />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarPassword(!mostrarPassword)
+                }
+                style={styles.eyeButton}
+              >
+
+                {mostrarPassword ? (
+                  <EyeOff size={18} color="#6b7280" />
+                ) : (
+                  <Eye size={18} color="#6b7280" />
+                )}
+
+              </button>
+
             </div>
+
+            {password.length > 0 && password.length < 8 && (
+              <span style={styles.passwordError}>
+                Mínimo 8 caracteres
+              </span>
+            )}
+
           </div>
 
-          {/* BOTÓN SUBMIT */}
-          <button type="submit" style={styles.btnSubmit}>
-            Registrarme como {tipoCuenta === 'cliente' ? 'Cliente' : 'Profesional'}
+          {/* TERMINOS */}
+          <button
+            type="button"
+            onClick={() =>
+              setAceptaTerminos(!aceptaTerminos)
+            }
+            style={styles.termsButton}
+          >
+
+            <span
+              style={{
+                ...styles.checkbox,
+                ...(aceptaTerminos
+                  ? styles.checkboxChecked
+                  : {})
+              }}
+            >
+
+              {aceptaTerminos && (
+                <Check
+                  size={14}
+                  color="#ffffff"
+                />
+              )}
+
+            </span>
+
+            <span style={styles.termsText}>
+              Acepto los Términos y Condiciones
+            </span>
+
           </button>
+
+          {/* ERROR */}
+          {error && (
+            <div style={styles.error}>
+              {error}
+            </div>
+          )}
+
+          {/* BOTON */}
+          <button
+            type="submit"
+            disabled={cargando}
+            style={{
+              ...styles.btnSubmit,
+              ...(password.length >= 8 && aceptaTerminos
+                ? {}
+                : styles.btnDisabled),
+              opacity: cargando ? 0.7 : 1,
+              cursor: cargando ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {cargando
+              ? 'Registrando...'
+              : `Registrarme como ${
+                  tipoCuenta === 'cliente'
+                    ? 'Cliente'
+                    : 'Profesional'
+                }`}
+          </button>
+
         </form>
 
-        {/* PIE DE TARJETA: ENLACE A LOGIN */}
+        {/* LOGIN */}
         <div style={styles.footer}>
+
           <p style={styles.footerText}>
             ¿Ya tienes una cuenta?{' '}
-            <Link to="/login" style={styles.loginLink}>
+
+            <Link
+              to="/login"
+              style={styles.loginLink}
+            >
               Inicia sesión aquí
             </Link>
+
           </p>
+
         </div>
 
       </div>
+
     </div>
   );
 }
 
-// ESTILOS EN CSS-IN-JS
 const styles = {
+
   container: {
     minHeight: '100vh',
     display: 'flex',
@@ -136,17 +357,19 @@ const styles = {
     alignItems: 'center',
     backgroundColor: '#faf5ff',
     padding: '20px',
-    fontFamily: 'sans-serif'
+    fontFamily: 'Arial, sans-serif'
   },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
     padding: '32px',
     width: '100%',
     maxWidth: '420px',
-    boxShadow: '0 10px 25px rgba(107, 33, 168, 0.1)',
+    boxShadow: '0 10px 25px rgba(107, 33, 168, 0.10)',
     border: '1px solid #f3e8ff'
   },
+
   backLink: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -154,37 +377,26 @@ const styles = {
     color: '#6b7280',
     textDecoration: 'none',
     fontSize: '13px',
-    fontWeight: '500',
     marginBottom: '20px'
   },
+
   header: {
     textAlign: 'center',
     marginBottom: '20px'
   },
-  logoBadge: {
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: '20px',
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: '0 auto 10px auto'
-  },
+
   title: {
     fontSize: '22px',
-    fontWeight: '700',
     color: '#1f2937',
-    margin: '0 0 4px 0'
+    margin: '0 0 5px'
   },
+
   subtitle: {
     fontSize: '13px',
     color: '#6b7280',
     margin: 0
   },
+
   roleSelector: {
     display: 'flex',
     gap: '8px',
@@ -193,41 +405,46 @@ const styles = {
     borderRadius: '10px',
     marginBottom: '20px'
   },
+
   roleBtn: {
-    flex: '1',
+    flex: 1,
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     gap: '6px',
     border: 'none',
     backgroundColor: 'transparent',
-    padding: '8px',
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#6b7280',
+    padding: '9px',
     borderRadius: '8px',
+    color: '#6b7280',
+    fontWeight: '600',
     cursor: 'pointer'
   },
+
   roleBtnActive: {
     backgroundColor: '#ffffff',
     color: '#6b21a8',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
   },
+
   form: {
     display: 'flex',
     flexDirection: 'column',
     gap: '14px'
   },
+
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px'
+    gap: '5px'
   },
+
   label: {
     fontSize: '12px',
     fontWeight: '600',
     color: '#374151'
   },
+
   inputWrapper: {
     display: 'flex',
     alignItems: 'center',
@@ -235,16 +452,90 @@ const styles = {
     backgroundColor: '#f9fafb',
     border: '1px solid #d1d5db',
     borderRadius: '10px',
-    padding: '8px 12px'
+    padding: '9px 12px'
   },
+
   input: {
     border: 'none',
-    backgroundColor: 'transparent',
     outline: 'none',
+    backgroundColor: 'transparent',
     width: '100%',
-    fontSize: '13px',
-    color: '#1f2937'
+    fontSize: '13px'
   },
+
+  passwordWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #d1d5db',
+    borderRadius: '10px',
+    padding: '9px 12px'
+  },
+
+  passwordInput: {
+    border: 'none',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    width: '100%',
+    fontSize: '13px'
+  },
+
+  eyeButton: {
+    border: 'none',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    display: 'flex',
+    padding: '2px'
+  },
+
+  passwordError: {
+    color: '#dc2626',
+    fontSize: '11px'
+  },
+
+  termsButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '9px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    cursor: 'pointer',
+    padding: '5px 0',
+    textAlign: 'left'
+  },
+
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    minWidth: '18px',
+    border: '2px solid #d1d5db',
+    borderRadius: '5px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  checkboxChecked: {
+    backgroundColor: '#6b21a8',
+    borderColor: '#6b21a8'
+  },
+
+  termsText: {
+    fontSize: '12px',
+    color: '#4b5563'
+  },
+
+  error: {
+    backgroundColor: '#fef2f2',
+    color: '#dc2626',
+    border: '1px solid #fecaca',
+    borderRadius: '8px',
+    padding: '9px',
+    fontSize: '12px',
+    textAlign: 'center'
+  },
+
   btnSubmit: {
     backgroundColor: '#6b21a8',
     color: '#ffffff',
@@ -253,20 +544,26 @@ const styles = {
     padding: '12px',
     fontSize: '14px',
     fontWeight: '600',
-    cursor: 'pointer',
-    marginTop: '8px'
+    cursor: 'pointer'
   },
+
+  btnDisabled: {
+    backgroundColor: '#d1d5db',
+    color: '#6b7280'
+  },
+
   footer: {
     marginTop: '20px',
-    textAlign: 'center',
+    paddingTop: '14px',
     borderTop: '1px solid #f3f4f6',
-    paddingTop: '14px'
+    textAlign: 'center'
   },
+
   footerText: {
     fontSize: '13px',
-    color: '#6b7280',
-    margin: 0
+    color: '#6b7280'
   },
+
   loginLink: {
     color: '#6b21a8',
     fontWeight: '600',

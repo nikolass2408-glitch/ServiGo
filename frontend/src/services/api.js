@@ -1,22 +1,27 @@
 import axios from 'axios';
+import { demoAdapter } from './demoApi';
 
-// Instancia global de Axios orientada al backend
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Puerto estándar para el servidor Node/Express
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  adapter: import.meta.env.VITE_DEMO_MODE === 'false' ? undefined : demoAdapter,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Interceptor para adjuntar automáticamente el Token JWT si existe
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+);
 
 export default API;

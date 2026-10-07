@@ -1,16 +1,52 @@
 import API from './api';
 
 export const bookingService = {
-  // Obtener todas las reservas
   getReservas: async () => {
-    // const response = await API.get('/reservas');
-    // return response.data;
+    const response = await API.get('/reservas/lista/');
+    return response.data;
   },
 
-  // Crear una nueva reserva
   crearReserva: async (reservaData) => {
-    // const response = await API.post('/reservas', reservaData);
-    // return response.data;
-    console.log('Nueva reserva enviada al servidor:', reservaData);
+    const response = await API.post('/reservas/', reservaData);
+    return response.data;
+  },
+
+  confirmarReserva: async (id) => {
+    const response = await API.patch(
+      `/reservas/${id}/confirmar/`
+    );
+
+    return response.data;
+  },
+
+  rechazarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/rechazar/`);
+    return response.data;
+  },
+
+  completarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/completar/`);
+    return response.data;
+  },
+
+  cancelarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/cancelar/`);
+    return response.data;
+  },
+
+  reprogramarReserva: async (id, fecha, hora) => {
+    const response = await API.patch(`/reservas/${id}/reprogramar/`, {
+      fecha,
+      hora
+    });
+    return response.data;
+  },
+
+  obtenerReserva: async (id) => {
+    const response = await API.get(
+      `/reservas/${id}/`
+    );
+
+    return response.data;
   }
 };

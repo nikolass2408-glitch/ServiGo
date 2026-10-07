@@ -1,5 +1,4 @@
-// Archivo de datos simulados (Mock Data) para ServiGo
-// Permite renderizar listas reales de servicios y profesionales mientras se integra el backend.
+// src/services/mockData.js
 
 export const serviciosMock = [
   {

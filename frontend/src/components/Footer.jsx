@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandMark from './BrandMark';
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
         {/* LADO IZQUIERDO: Logo y Lema */}
         <div style={styles.brandColumn}>
           <div style={styles.logoContainer}>
-            <div style={styles.logoBadge}>S</div>
+            <BrandMark size={34} />
             <span style={styles.logoText}>ServiGo</span>
           </div>
           <p style={styles.tagline}>Agenda. Reserva. Listo.</p>
@@ -62,14 +63,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
-  },
-  logoBadge: {
-    backgroundColor: '#ffffff',
-    color: '#6b21a8',
-    fontWeight: 'bold',
-    fontSize: '18px',
-    padding: '4px 10px',
-    borderRadius: '8px'
   },
   logoText: {
     fontSize: '22px',

@@ -1,6 +1,7 @@
 import React from 'react';
 // Importamos los íconos para la sección de beneficios inferiores
 import { Calendar, Clock, Users, Bell, Smartphone, ArrowRight } from 'lucide-react';
+import BrandMark from './BrandMark';
 
 export default function BannerProfesionales() {
   // Lista de características principales con sus íconos
@@ -34,7 +35,10 @@ export default function BannerProfesionales() {
         <div style={styles.previewContainer}>
           <div style={styles.dashboardMockup}>
             <div style={styles.mockupHeader}>
-              <span style={styles.mockupLogo}>S ServiGo</span>
+              <div style={styles.mockupLogo}>
+                <BrandMark size={22} />
+                <span>ServiGo</span>
+              </div>
             </div>
             <div style={styles.mockupBody}>
               <p style={styles.mockupTitle}>Tus reservas</p>
@@ -159,7 +163,9 @@ const styles = {
     fontSize: '14px'
   },
   mockupLogo: {
-    display: 'inline-block'
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
   },
   mockupBody: {
     display: 'flex',
