@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import PerfilPanel from '../../components/PerfilPanel';
 import ProfessionalWorkspace from '../../components/ProfessionalWorkspace';
 import BrandMark from '../../components/BrandMark';
+import NotificationBell from '../../components/NotificationBell';
 
 const normalizarCita = (cita) => {
   const estadoCode = String(cita.estado || 'PENDIENTE').toUpperCase();
@@ -229,6 +230,7 @@ export default function DashboardProfesional() {
           <span style={styles.userName}>
             {user?.firstName || 'Profesional'}
           </span>
+          <NotificationBell userId={user?.id} />
 
           <button type="button" onClick={logout} style={styles.btnLogout}>
             <LogOut size={16} />

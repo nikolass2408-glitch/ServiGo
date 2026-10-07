@@ -3,6 +3,7 @@ import { Briefcase, CalendarDays, LogOut, RefreshCw, ShieldCheck, Users } from '
 import BrandMark from '../../components/BrandMark';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
+import NotificationBell from '../../components/NotificationBell';
 
 const roleName = (role) => ({ CLI: 'Cliente', PRO: 'Profesional', ADMIN: 'Administrador' }[role] || role);
 const statusName = (active) => active ? 'Activa' : 'Desactivada';
@@ -109,6 +110,7 @@ export default function DashboardAdmin() {
         </div>
         <div style={styles.userMenu}>
           <span style={styles.userName}>{user?.firstName || 'Administración'}</span>
+          <NotificationBell userId={user?.id} />
           <button type="button" onClick={logout} style={styles.logout}><LogOut size={16} />Salir</button>
         </div>
       </header>

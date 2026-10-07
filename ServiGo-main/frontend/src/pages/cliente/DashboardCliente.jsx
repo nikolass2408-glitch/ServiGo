@@ -9,7 +9,11 @@ import {
   Eye,
   X,
   RefreshCw,
-  Ban
+  Ban,
+  CalendarDays,
+  PanelLeftClose,
+  PanelLeftOpen,
+  UserRound
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +23,7 @@ import { bookingService } from '../../services/bookingService';
 import API from '../../services/api';
 import PerfilPanel from '../../components/PerfilPanel';
 import ClientNotifications from '../../components/ClientNotifications';
+import NotificationBell from '../../components/NotificationBell';
 
 const normalizarReserva = (reserva) => {
   const servicio = typeof reserva.servicio === 'object' ? reserva.servicio : {};
@@ -56,6 +61,8 @@ export default function DashboardCliente() {
     user?.nombre ||
     user?.username ||
     'Cliente';
+  const [activeSection, setActiveSection] = useState('perfil');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [servicios, setServicios] = useState([]);
   const [reservas, setReservas] = useState([]);
@@ -245,6 +252,7 @@ export default function DashboardCliente() {
           <span style={styles.userName}>
             Hola, {nombreUsuario}
           </span>
+          <NotificationBell userId={user?.id} />
 
           <button
             onClick={logout}
@@ -261,9 +269,52 @@ export default function DashboardCliente() {
       {/* =========================
           CONTENIDO PRINCIPAL
       ========================== */}
-      <main style={styles.content}>
+      <div className={`client-layout${sidebarCollapsed ? ' client-layout--collapsed' : ''}`}>
+        <aside className="client-sidebar" aria-label="Navegación del cliente">
+          <div className="client-sidebar__heading">
+            {!sidebarCollapsed && <span>Mi espacio</span>}
+            <button
+              type="button"
+              className="client-sidebar__toggle"
+              onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+              aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+              title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+          </div>
+          <nav className="client-sidebar__nav" aria-label="Secciones">
+            <button
+              type="button"
+              className={`client-sidebar__link${activeSection === 'perfil' ? ' is-active' : ''}`}
+              onClick={() => setActiveSection('perfil')}
+              aria-current={activeSection === 'perfil' ? 'page' : undefined}
+              title={sidebarCollapsed ? 'Perfil' : undefined}
+            >
+              <UserRound size={18} />
+              {!sidebarCollapsed && <span>Perfil</span>}
+            </button>
+            <button
+              type="button"
+              className={`client-sidebar__link${activeSection === 'agenda' ? ' is-active' : ''}`}
+              onClick={() => setActiveSection('agenda')}
+              aria-current={activeSection === 'agenda' ? 'page' : undefined}
+              title={sidebarCollapsed ? 'Agenda de citas' : undefined}
+            >
+              <CalendarDays size={18} />
+              {!sidebarCollapsed && <span>Agenda de citas</span>}
+              {!sidebarCollapsed && reservas.length > 0 && (
+                <span className="client-sidebar__count">{reservas.length}</span>
+              )}
+            </button>
+          </nav>
+        </aside>
 
-        <PerfilPanel />
+        <main className="client-main" style={styles.content}>
+        {activeSection === 'perfil' ? (
+          <PerfilPanel />
+        ) : (
+          <>
 
         {/* =========================
             MIS RESERVAS ACTIVAS
@@ -465,8 +516,11 @@ export default function DashboardCliente() {
           </div>
 
         </section>
+          </>
+        )}
 
       </main>
+      </div>
 
 
       {/* ==================================================
@@ -942,6 +996,8 @@ const styles = {
 
   /* CONTENIDO */
   content: {
+    width: '100%',
+    minWidth: 0,
     maxWidth: '1000px',
     margin: '32px auto',
     padding: '0 20px',
