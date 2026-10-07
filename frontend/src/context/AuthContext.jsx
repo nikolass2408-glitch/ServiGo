@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useState,
   useContext
@@ -43,15 +43,12 @@ export function AuthProvider({ children }) {
   // LOGIN REAL CONTRA EL BACKEND
   // ================================
   const login = async (username, password) => {
-
     const response = await API.post('/login/', {
       username,
       password
     });
 
     const { token, usuario } = response.data;
-
-    console.log('Respuesta del backend:', usuario);
 
     const usuarioNormalizado = {
       ...usuario,
@@ -72,6 +69,15 @@ export function AuthProvider({ children }) {
     return usuarioNormalizado;
   };
 
+  const updateUser = (updatedUser) => {
+    const usuarioNormalizado = {
+      ...updatedUser,
+      rol: normalizarRol(updatedUser.rol)
+    };
+    localStorage.setItem('servigo_user', JSON.stringify(usuarioNormalizado));
+    setUser(usuarioNormalizado);
+  };
+
   // ================================
   // CERRAR SESIÓN
   // ================================
@@ -87,8 +93,9 @@ export function AuthProvider({ children }) {
       value={{
         user,
         login,
-        logout
-      }}
+      logout,
+      updateUser
+    }}
     >
       {children}
     </AuthContext.Provider>

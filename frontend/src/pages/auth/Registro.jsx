@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import API from '../../services/api';
+import BrandMark from '../../components/BrandMark';
 
 export default function Registro() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function Registro() {
     try {
       const correo = email.trim().toLowerCase();
 
-      const response = await API.post('/registro/', {
+      await API.post('/registro/', {
         username: correo, // el correo se usa como usuario para iniciar sesión
         nombre,
         email: correo,
@@ -68,11 +69,9 @@ export default function Registro() {
         rol: tipoCuenta // 'cliente' o 'profesional'
       });
 
-      console.log('Registro OK:', response.data);
       alert('¡Registro exitoso!');
       navigate('/login');
     } catch (err) {
-      console.error('ERROR REGISTRO:', err.response?.data || err);
       setError(
         err.response?.data?.error ||
           'No fue posible registrar el usuario.'
@@ -94,9 +93,7 @@ export default function Registro() {
 
         <div style={styles.header}>
 
-          <div style={styles.logoBadge}>
-            S
-          </div>
+          <BrandMark size={40} style={{ margin: '0 auto 10px' }} />
 
           <h2 style={styles.title}>
             Crea tu cuenta
@@ -388,20 +385,6 @@ const styles = {
     marginBottom: '20px'
   },
 
-  logoBadge: {
-    width: '40px',
-    height: '40px',
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    borderRadius: '10px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: '0 auto 10px',
-    fontSize: '20px',
-    fontWeight: 'bold'
-  },
-
   title: {
     fontSize: '22px',
     color: '#1f2937',
@@ -587,4 +570,3 @@ const styles = {
     textDecoration: 'none'
   }
 };
-

@@ -1,6 +1,7 @@
 import React from 'react';
 // 1. Importamos Link para la navegación interna sin recargar la página
 import { Link } from 'react-router-dom';
+import BrandMark from './BrandMark';
 
 export default function Navbar() {
   return (
@@ -9,16 +10,16 @@ export default function Navbar() {
       {/* LOGO (Nos lleva al inicio '/') */}
       <Link to="/" style={{ textDecoration: 'none' }}>
         <div style={styles.logoContainer}>
-          <div style={styles.logoBadge}>S</div>
+          <BrandMark size={36} />
           <span style={styles.logoText}>ServiGo</span>
         </div>
       </Link>
 
       {/* MENÚ DE NAVEGACIÓN */}
       <nav style={styles.navLinks}>
-        <Link to="/" style={{ ...styles.link, ...styles.activeLink }}>Inicio</Link>
-        <a href="#servicios" style={styles.link}>Explorar servicios</a>
-        <a href="#funciona" style={styles.link}>¿Cómo funciona?</a>
+        <a href="#quienes-somos" style={{ ...styles.link, ...styles.activeLink }}>
+          Quiénes somos
+        </a>
       </nav>
 
       {/* BOTONES CONECTADOS A LOGIN Y REGISTRO */}
@@ -53,14 +54,6 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     cursor: 'pointer'
-  },
-  logoBadge: {
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: '18px',
-    padding: '6px 12px',
-    borderRadius: '8px'
   },
   logoText: {
     fontSize: '22px',

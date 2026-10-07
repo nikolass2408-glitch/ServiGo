@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
   Calendar,
   CheckCircle,
@@ -7,58 +6,166 @@ import {
   LogOut,
   X,
   User,
-  Phone
+  Phone,
+  RefreshCw,
+  Ban
 } from 'lucide-react';
 
 import { bookingService } from '../../services/bookingService';
+import { useAuth } from '../../context/AuthContext';
+import PerfilPanel from '../../components/PerfilPanel';
+import ProfessionalWorkspace from '../../components/ProfessionalWorkspace';
+import BrandMark from '../../components/BrandMark';
+import NotificationBell from '../../components/NotificationBell';
+
+const normalizarCita = (cita) => {
+  const estadoCode = String(cita.estado || 'PENDIENTE').toUpperCase();
+  const estados = {
+    PENDIENTE: 'Pendiente',
+    CONFIRMADA: 'Confirmada',
+    CANCELADA: 'Cancelada',
+    COMPLETADA: 'Completada',
+    REPROGRAMADA: 'Reprogramada',
+    RECHAZADA: 'Rechazada'
+  };
+  return { ...cita, estadoCode, estado: estados[estadoCode] || estadoCode };
+};
 
 export default function DashboardProfesional() {
+  const { user, logout } = useAuth();
+  const [profileRevision, setProfileRevision] = useState(0);
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reservaSeleccionada, setReservaSeleccionada] = useState(null);
+  const [accionEnCurso, setAccionEnCurso] = useState('');
+  const [errorAccion, setErrorAccion] = useState('');
+  const [mensajeAccion, setMensajeAccion] = useState('');
+  const [mostrarReprogramacion, setMostrarReprogramacion] = useState(false);
+  const [nuevaFecha, setNuevaFecha] = useState('');
+  const [nuevaHora, setNuevaHora] = useState('');
+  const [fechaMinima] = useState(() => {
+    const fecha = new Date();
+    fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
+    return fecha.toISOString().slice(0, 10);
+  });
 
   useEffect(() => {
-    cargarReservas();
+    let activo = true;
+    bookingService.getReservas()
+      .then((data) => {
+        if (activo) setCitas(Array.isArray(data) ? data.map(normalizarCita) : []);
+      })
+      .catch((error) => {
+        if (activo) {
+          setError(
+            error.response?.data?.error ||
+            error.message ||
+            'Error cargando las reservas'
+          );
+        }
+      })
+      .finally(() => {
+        if (activo) setLoading(false);
+      });
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
-  const cargarReservas = async () => {
+  const ejecutarAccionReserva = async (accion, cita = reservaSeleccionada, datos = {}) => {
+    if (!cita) return;
+
+    setAccionEnCurso(accion);
+    setErrorAccion('');
+    setMensajeAccion('');
+    setError('');
+
     try {
-      setLoading(true);
-      setError('');
+      let respuesta;
+      if (accion === 'confirmar') {
+        respuesta = await bookingService.confirmarReserva(cita._id);
+      } else if (accion === 'rechazar') {
+        respuesta = await bookingService.rechazarReserva(cita._id);
+      } else if (accion === 'completar') {
+        respuesta = await bookingService.completarReserva(cita._id);
+      } else if (accion === 'cancelar') {
+        respuesta = await bookingService.cancelarReserva(cita._id);
+      } else {
+        respuesta = await bookingService.reprogramarReserva(
+          cita._id,
+          datos.fecha,
+          datos.hora
+        );
+      }
 
-      const data = await bookingService.getReservas();
-
-      console.log('RESERVAS DEL BACKEND:', data);
-
-      setCitas(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('ERROR RESERVAS:', error);
-
-      setError(
-        error.response?.data?.message ||
-        error.message ||
-        'Error cargando las reservas'
+      const actualizada = normalizarCita(respuesta);
+      setCitas((actuales) => actuales.map((item) =>
+        item._id === actualizada._id ? actualizada : item
+      ));
+      if (reservaSeleccionada?._id === actualizada._id) {
+        setReservaSeleccionada(actualizada);
+      }
+      setMostrarReprogramacion(false);
+      setMensajeAccion(
+        accion === 'confirmar'
+          ? 'Cita confirmada.'
+          : accion === 'rechazar'
+            ? 'Solicitud rechazada.'
+            : accion === 'completar'
+              ? 'Cita marcada como completada.'
+          : accion === 'cancelar'
+            ? 'Cita cancelada.'
+            : 'Cita reprogramada.'
       );
+    } catch (error) {
+      const mensaje = error.response?.data?.error || 'No se pudo actualizar la cita.';
+      if (reservaSeleccionada?._id === cita._id) setErrorAccion(mensaje);
+      else setError(mensaje);
     } finally {
-      setLoading(false);
+      setAccionEnCurso('');
     }
   };
 
-  const confirmarReserva = async (id) => {
-    try {
-      await bookingService.confirmarReserva(id);
+  const confirmarReserva = (cita) => ejecutarAccionReserva('confirmar', cita);
 
-      await cargarReservas();
-    } catch (error) {
-      console.error('ERROR CONFIRMANDO:', error);
-
-      setError(
-        error.response?.data?.message ||
-        'No se pudo confirmar la reserva'
-      );
-    }
+  const abrirReserva = (cita) => {
+    setReservaSeleccionada(cita);
+    setErrorAccion('');
+    setMensajeAccion('');
+    setMostrarReprogramacion(false);
   };
+
+  const iniciarReprogramacion = () => {
+    const hora = String(reservaSeleccionada?.hora || '');
+    const partes = hora.match(/^(\d{1,2}):(\d{2})(?:\s*(a\.?m\.?|p\.?m\.?))?$/i);
+    let horaInicial = '';
+    if (partes) {
+      let horas = Number(partes[1]);
+      const periodo = partes[3]?.toLowerCase().replaceAll('.', '');
+      if (periodo === 'pm' && horas < 12) horas += 12;
+      if (periodo === 'am' && horas === 12) horas = 0;
+      horaInicial = `${String(horas).padStart(2, '0')}:${partes[2]}`;
+    }
+    setNuevaFecha(reservaSeleccionada?.fecha || '');
+    setNuevaHora(horaInicial);
+    setErrorAccion('');
+    setMensajeAccion('');
+    setMostrarReprogramacion(true);
+  };
+
+  const enviarReprogramacion = (event) => {
+    event.preventDefault();
+    ejecutarAccionReserva('reprogramar', reservaSeleccionada, {
+      fecha: nuevaFecha,
+      hora: nuevaHora
+    });
+  };
+
+  const citasActivas = ['PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA'].includes(
+    reservaSeleccionada?.estadoCode
+  );
 
   const obtenerNombreCliente = (cita) => {
     const cliente = cita?.cliente;
@@ -82,21 +189,16 @@ export default function DashboardProfesional() {
   };
 
   const reservasActivas = citas.filter(
-    (cita) =>
-      cita.estado !== 'Cancelada' &&
-      cita.estado !== 'Rechazada' &&
-      cita.estado !== 'Completada'
+    (cita) => ['PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA'].includes(cita.estadoCode)
   ).length;
 
   const pendientes = citas.filter(
-    (cita) => cita.estado === 'Pendiente'
+    (cita) => cita.estadoCode === 'PENDIENTE'
   ).length;
 
   const ingresos = citas
     .filter(
-      (cita) =>
-        cita.estado !== 'Cancelada' &&
-        cita.estado !== 'Rechazada'
+      (cita) => cita.estadoCode === 'COMPLETADA'
     )
     .reduce((total, cita) => {
       return (
@@ -116,7 +218,7 @@ export default function DashboardProfesional() {
       <header style={styles.navbar}>
 
         <div style={styles.logoContainer}>
-          <div style={styles.logoBadge}>S</div>
+          <BrandMark size={36} />
 
           <span style={styles.logoText}>
             ServiGo Pro
@@ -126,16 +228,14 @@ export default function DashboardProfesional() {
         <div style={styles.userMenu}>
 
           <span style={styles.userName}>
-            Barbería El Elegante
+            {user?.firstName || 'Profesional'}
           </span>
+          <NotificationBell userId={user?.id} />
 
-          <Link
-            to="/"
-            style={styles.btnLogout}
-          >
+          <button type="button" onClick={logout} style={styles.btnLogout}>
             <LogOut size={16} />
             Salir
-          </Link>
+          </button>
 
         </div>
 
@@ -156,6 +256,8 @@ export default function DashboardProfesional() {
           </p>
         </div>
 
+        <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
+        <ProfessionalWorkspace key={profileRevision} user={user} />
 
         {/* ERROR */}
 
@@ -318,12 +420,12 @@ export default function DashboardProfesional() {
                             ...styles.estado,
 
                             backgroundColor:
-                              cita.estado === 'Confirmada'
+                              cita.estadoCode === 'CONFIRMADA'
                                 ? '#dcfce7'
                                 : '#fef3c7',
 
                             color:
-                              cita.estado === 'Confirmada'
+                              cita.estadoCode === 'CONFIRMADA'
                                 ? '#15803d'
                                 : '#b45309'
                           }}
@@ -337,13 +439,13 @@ export default function DashboardProfesional() {
 
                         <div style={styles.actions}>
 
-                          {cita.estado === 'Pendiente' && (
+                          {cita.estadoCode === 'PENDIENTE' && (
 
                             <button
                               type="button"
                               style={styles.confirmar}
                               onClick={() =>
-                                confirmarReserva(cita._id)
+                                confirmarReserva(cita)
                               }
                             >
                               <CheckCircle size={14} />
@@ -356,7 +458,7 @@ export default function DashboardProfesional() {
                             type="button"
                             style={styles.ver}
                             onClick={() =>
-                              setReservaSeleccionada(cita)
+                              abrirReserva(cita)
                             }
                           >
                             <Eye size={14} />
@@ -413,6 +515,7 @@ export default function DashboardProfesional() {
               <button
                 type="button"
                 style={styles.close}
+                aria-label="Cerrar información de la cita"
                 onClick={() =>
                   setReservaSeleccionada(null)
                 }
@@ -507,6 +610,111 @@ export default function DashboardProfesional() {
 
               </div>
 
+              {errorAccion && <p role="alert" style={styles.actionError}>{errorAccion}</p>}
+              {mensajeAccion && <p role="status" style={styles.actionSuccess}>{mensajeAccion}</p>}
+
+              {mostrarReprogramacion ? (
+                <form onSubmit={enviarReprogramacion} style={styles.reprogramForm}>
+                  <label style={styles.formField}>
+                    <span style={styles.infoLabel}>Nueva fecha</span>
+                    <input
+                      type="date"
+                      value={nuevaFecha}
+                      min={fechaMinima}
+                      onChange={(event) => setNuevaFecha(event.target.value)}
+                      required
+                      style={styles.actionInput}
+                    />
+                  </label>
+                  <label style={styles.formField}>
+                    <span style={styles.infoLabel}>Nueva hora</span>
+                    <input
+                      type="time"
+                      value={nuevaHora}
+                      onChange={(event) => setNuevaHora(event.target.value)}
+                      required
+                      style={styles.actionInput}
+                    />
+                  </label>
+                  <div style={styles.modalActions}>
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionSecondary }}
+                      onClick={() => setMostrarReprogramacion(false)}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      Volver
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ ...styles.actionButton, ...styles.actionPrimary }}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <RefreshCw size={15} />
+                      {accionEnCurso === 'reprogramar' ? 'Guardando...' : 'Guardar horario'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div style={styles.modalActions}>
+                  {['PENDIENTE', 'REPROGRAMADA'].includes(reservaSeleccionada.estadoCode) && (
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionPrimary }}
+                      onClick={() => ejecutarAccionReserva('confirmar')}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <CheckCircle size={15} />
+                      {accionEnCurso === 'confirmar' ? 'Confirmando...' : 'Confirmar cita'}
+                    </button>
+                  )}
+                  {['PENDIENTE', 'REPROGRAMADA'].includes(reservaSeleccionada.estadoCode) && (
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionDanger }}
+                      onClick={() => ejecutarAccionReserva('rechazar')}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <X size={15} />
+                      {accionEnCurso === 'rechazar' ? 'Rechazando...' : 'Rechazar'}
+                    </button>
+                  )}
+                  {reservaSeleccionada.estadoCode === 'CONFIRMADA' && (
+                    <button
+                      type="button"
+                      style={{ ...styles.actionButton, ...styles.actionPrimary }}
+                      onClick={() => ejecutarAccionReserva('completar')}
+                      disabled={Boolean(accionEnCurso)}
+                    >
+                      <CheckCircle size={15} />
+                      {accionEnCurso === 'completar' ? 'Actualizando...' : 'Marcar completada'}
+                    </button>
+                  )}
+                  {citasActivas && (
+                    <>
+                      <button
+                        type="button"
+                        style={{ ...styles.actionButton, ...styles.actionSecondary }}
+                        onClick={iniciarReprogramacion}
+                        disabled={Boolean(accionEnCurso)}
+                      >
+                        <RefreshCw size={15} />
+                        Reprogramar
+                      </button>
+                      <button
+                        type="button"
+                        style={{ ...styles.actionButton, ...styles.actionDanger }}
+                        onClick={() => ejecutarAccionReserva('cancelar')}
+                        disabled={Boolean(accionEnCurso)}
+                      >
+                        <Ban size={15} />
+                        {accionEnCurso === 'cancelar' ? 'Cancelando...' : 'Cancelar cita'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
             </div>
 
           </div>
@@ -543,14 +751,6 @@ const styles = {
     gap: '8px'
   },
 
-  logoBadge: {
-    backgroundColor: '#6b21a8',
-    color: '#fff',
-    fontWeight: 'bold',
-    padding: '6px 10px',
-    borderRadius: '6px'
-  },
-
   logoText: {
     fontSize: '20px',
     fontWeight: 'bold'
@@ -572,7 +772,9 @@ const styles = {
     alignItems: 'center',
     gap: '5px',
     color: '#ef4444',
-    textDecoration: 'none'
+    background: 'transparent',
+    border: 0,
+    cursor: 'pointer'
   },
 
   content: {
@@ -714,7 +916,8 @@ const styles = {
     maxWidth: '480px',
     backgroundColor: '#fff',
     borderRadius: '15px',
-    overflow: 'hidden'
+    maxHeight: '90vh',
+    overflowY: 'auto'
   },
 
   modalHeader: {
@@ -765,5 +968,73 @@ const styles = {
     padding: '15px',
     borderRadius: '8px',
     marginTop: '15px'
+  },
+
+  modalActions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    marginTop: '16px'
+  },
+
+  reprogramForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginTop: '16px'
+  },
+
+  formField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+
+  actionInput: {
+    boxSizing: 'border-box',
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    font: 'inherit'
+  },
+
+  actionButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '9px 12px',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+
+  actionPrimary: {
+    backgroundColor: '#6b21a8',
+    color: '#fff'
+  },
+
+  actionSecondary: {
+    backgroundColor: '#f3e8ff',
+    color: '#581c87'
+  },
+
+  actionDanger: {
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c'
+  },
+
+  actionError: {
+    color: '#b91c1c',
+    fontSize: '13px'
+  },
+
+  actionSuccess: {
+    color: '#15803d',
+    fontSize: '13px'
   }
 };

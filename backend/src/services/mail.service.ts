@@ -90,4 +90,55 @@ export class MailService {
 
     console.log(`[MAIL] Confirmación enviada a ${datos.to}`);
   }
+
+  static async enviarRecordatorioReserva(datos: DatosReservaCorreo) {
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      console.warn("[MAIL] MAIL_USER o MAIL_PASS no configurados. No se envió el recordatorio por correo.");
+      return;
+    }
+    if (!datos.to) {
+      console.warn("[MAIL] La reserva no tiene correo de destino para el recordatorio.");
+      return;
+    }
+
+    const detalles = [
+      `Servicio: ${datos.servicio}`,
+      datos.profesional ? `Profesional: ${datos.profesional}` : null,
+      `Fecha: ${datos.fecha}`,
+      datos.hora ? `Hora: ${datos.hora}` : null,
+    ].filter(Boolean).join("\n");
+
+    await this.crearTransporter().sendMail({
+      from: process.env.MAIL_FROM || process.env.MAIL_USER,
+      to: datos.to,
+      subject: "Recordatorio de cita - ServiGo",
+      text: `Hola ${datos.nombreCliente}, te recordamos tu cita dentro de una hora.\n\n${detalles}`,
+    });
+    console.log(`[MAIL] Recordatorio enviado a ${datos.to}`);
+  }
+
+  static async enviarEnlaceRecuperacion(to: string, nombre: string, url: string) {
+    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+      console.warn("[MAIL] MAIL_USER o MAIL_PASS no configurados. No se envió el correo.");
+      return;
+    }
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:24px;">
+        <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;text-align:center;">
+          <h2 style="color:#1f2937;margin:0 0 12px;">Restablece tu contraseña</h2>
+          <p style="color:#6b7280;font-size:14px;">Hola ${esc(nombre || "")}, recibimos una solicitud para cambiar la contraseña de tu cuenta ServiGo.</p>
+          <a href="${esc(url)}" style="display:inline-block;background:#6b21a8;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;margin:16px 0;">Crear nueva contraseña</a>
+          <p style="color:#6b7280;font-size:13px;">El enlace vence en 30 minutos y solo puede utilizarse una vez.</p>
+          <p style="color:#9ca3af;font-size:12px;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
+        </div>
+      </div>`;
+
+    await this.crearTransporter().sendMail({
+      from: process.env.MAIL_FROM || process.env.MAIL_USER,
+      to,
+      subject: "Restablecer contraseña - ServiGo",
+      html,
+    });
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -9,11 +9,13 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
+import BrandMark from '../../components/BrandMark';
+import { demoCredentials } from '../../services/demoApi';
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -38,23 +40,24 @@ export default function Login() {
         password
       );
 
-      console.log('Usuario autenticado:', usuario);
-
       // VERIFICAR EL ROL (AuthContext ya lo traduce a
       // 'cliente', 'profesional' o 'admin')
       if (rol === 'cliente' && usuario.rol !== 'cliente') {
+        logout();
         throw new Error(
           'La cuenta ingresada no corresponde a un cliente.'
         );
       }
 
       if (rol === 'profesional' && usuario.rol !== 'profesional') {
+        logout();
         throw new Error(
           'La cuenta ingresada no corresponde a un prestador de servicio.'
         );
       }
 
       if (rol === 'admin' && usuario.rol !== 'admin') {
+        logout();
         throw new Error(
           'La cuenta ingresada no corresponde a un administrador.'
         );
@@ -72,8 +75,6 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error('ERROR LOGIN:', error.response?.data || error);
-
       if (error.response) {
         // Error enviado por Express
         setError(
@@ -100,9 +101,7 @@ export default function Login() {
         {/* ENCABEZADO */}
         <div style={styles.header}>
 
-          <div style={styles.logoBadge}>
-            S
-          </div>
+          <BrandMark size={40} style={{ margin: '0 auto 12px' }} />
 
           <h2 style={styles.title}>
             ¡Bienvenido de nuevo!
@@ -175,7 +174,8 @@ export default function Login() {
               />
 
               <input
-                type="text"
+                type="email"
+                autoComplete="username"
                 placeholder="Ingresa tu correo"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -185,6 +185,22 @@ export default function Login() {
 
             </div>
 
+          </div>
+
+          <div style={styles.demoAccess}>
+            <span>Cuenta de demostración: {demoCredentials[rol].email}</span>
+            <span>Contraseña: {demoCredentials[rol].password}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername(demoCredentials[rol].email);
+                setPassword(demoCredentials[rol].password);
+              }}
+              style={styles.demoButton}
+            >
+              Usar cuenta demo
+            </button>
+            <small>Los datos de esta demo se guardan solo en este navegador.</small>
           </div>
 
           {/* CONTRASEÑA */}
@@ -235,6 +251,12 @@ export default function Login() {
 
             </div>
 
+          </div>
+
+          <div style={styles.forgotPasswordRow}>
+            <Link to="/recuperar-password" style={styles.registerLink}>
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           {/* ERROR */}
@@ -321,20 +343,6 @@ const styles = {
   header: {
     textAlign: 'center',
     marginBottom: '28px'
-  },
-
-  logoBadge: {
-    backgroundColor: '#6b21a8',
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: '20px',
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 12px auto'
   },
 
   title: {
@@ -432,6 +440,36 @@ const styles = {
     padding: '10px',
     fontSize: '12px',
     textAlign: 'center'
+  },
+
+  forgotPasswordRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '-10px'
+  },
+
+  demoAccess: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px',
+    marginTop: '-10px',
+    padding: '11px',
+    borderRadius: '9px',
+    backgroundColor: '#faf5ff',
+    color: '#581c87',
+    fontSize: '12px'
+  },
+
+  demoButton: {
+    alignSelf: 'flex-start',
+    padding: '5px 8px',
+    border: '1px solid #e9d5ff',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    color: '#6b21a8',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer'
   },
 
   submitBtn: {

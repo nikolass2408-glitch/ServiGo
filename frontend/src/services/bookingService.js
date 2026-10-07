@@ -19,6 +19,29 @@ export const bookingService = {
     return response.data;
   },
 
+  rechazarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/rechazar/`);
+    return response.data;
+  },
+
+  completarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/completar/`);
+    return response.data;
+  },
+
+  cancelarReserva: async (id) => {
+    const response = await API.patch(`/reservas/${id}/cancelar/`);
+    return response.data;
+  },
+
+  reprogramarReserva: async (id, fecha, hora) => {
+    const response = await API.patch(`/reservas/${id}/reprogramar/`, {
+      fecha,
+      hora
+    });
+    return response.data;
+  },
+
   obtenerReserva: async (id) => {
     const response = await API.get(
       `/reservas/${id}/`
