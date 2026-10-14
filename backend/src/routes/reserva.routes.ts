@@ -36,7 +36,7 @@ router.get(
 
 router.patch(
   "/reservas/:id/confirmar/",
-  authorizeRoles(ROLES.PRO, ROLES.ADMIN),
+  authorizeRoles(ROLES.CLI, ROLES.PRO, ROLES.ADMIN),
   ReservaController.confirmar
 );
 
@@ -60,7 +60,7 @@ router.patch(
 
 router.patch(
   "/reservas/:id/rechazar/",
-  authorizeRoles(ROLES.PRO, ROLES.ADMIN),
+  authorizeRoles(ROLES.CLI, ROLES.PRO, ROLES.ADMIN),
   ReservaController.rechazar
 );
 

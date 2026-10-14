@@ -1,4 +1,5 @@
 import BrandMark from './BrandMark';
+import { Link } from 'react-router-dom';
 
 export default function Hero() {
   return (
@@ -26,8 +27,8 @@ export default function Hero() {
             </p>
 
             <div style={styles.buttonGroup}>
-              <button style={styles.btnPrimary}>🔍 Buscar un servicio</button>
-              <button style={styles.btnSecondary}>Soy profesional</button>
+              <a href="#servicios" style={styles.btnPrimary}>🔍 Buscar un servicio</a>
+              <Link to="/registro" style={styles.btnSecondary}>Soy profesional</Link>
             </div>
 
             <div style={styles.metricsRow}>

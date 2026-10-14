@@ -72,7 +72,7 @@ export default function PerfilPanel({ profesional = false, onSaved }) {
     if (!archivo) return;
 
     const tipos = ['image/png', 'image/jpeg', 'image/webp'];
-    const limiteBytes = import.meta.env.VITE_DEMO_MODE === 'false' ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+    const limiteBytes = 5 * 1024 * 1024;
     if (!tipos.includes(archivo.type)) {
       setError('Selecciona una imagen PNG, JPEG o WebP.');
       return;
@@ -84,21 +84,6 @@ export default function PerfilPanel({ profesional = false, onSaved }) {
 
     setError('');
     setMensaje('');
-    if (import.meta.env.VITE_DEMO_MODE !== 'false') {
-      const lector = new FileReader();
-      lector.onload = () => {
-        if (typeof lector.result !== 'string') {
-          setError('No se pudo leer el archivo de imagen.');
-          return;
-        }
-        setDatos((actuales) => ({ ...actuales, imagen: lector.result }));
-        setMensaje('Imagen cargada. Guarda los cambios del perfil para publicarla.');
-      };
-      lector.onerror = () => setError('No se pudo leer el archivo de imagen.');
-      lector.readAsDataURL(archivo);
-      return;
-    }
-
     if (!profesionalId) {
       setError('Guarda primero la información del negocio y vuelve a cargar la imagen.');
       return;
@@ -219,7 +204,7 @@ export default function PerfilPanel({ profesional = false, onSaved }) {
             <label style={styles.field}>
               <span>Subir imagen (PNG, JPEG o WebP)</span>
               <input type="file" accept="image/png,image/jpeg,image/webp" onChange={cargarImagen} disabled={subiendoImagen} />
-              <small>{subiendoImagen ? 'Subiendo imagen...' : `Tamaño máximo: ${import.meta.env.VITE_DEMO_MODE === 'false' ? '5 MB' : '2 MB'}.`}</small>
+              <small>{subiendoImagen ? 'Subiendo imagen...' : 'Tamaño máximo: 5 MB.'}</small>
             </label>
             <label style={styles.field}>
               <span>Enlace personalizado</span>

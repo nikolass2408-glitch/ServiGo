@@ -254,11 +254,11 @@ export class ReservaService {
   }
 
   /**
-   * Confirma una reserva y notifica al cliente por correo.
+   * Confirma una reserva y notifica a la otra parte.
    */
   static async confirmar(id: string, user: any) {
-    if (user?.rol !== ROLES.ADMIN && user?.rol !== ROLES.PRO) {
-      throw Object.assign(new Error("Solo el profesional puede confirmar una reserva."), {
+    if (![ROLES.ADMIN, ROLES.PRO, ROLES.CLI].includes(user?.rol)) {
+      throw Object.assign(new Error("No tienes permisos para confirmar esta reserva."), {
         statusCode: 403,
       });
     }
@@ -267,27 +267,33 @@ export class ReservaService {
 
     reserva.estado = ESTADOS_RESERVA.CONFIRMADA;
     await reserva.save();
+    const confirmadaPorCliente = user?.rol === ROLES.CLI;
     await NotificacionRepository.crear({
-      usuario: idRelacionado(reserva.cliente),
+      usuario: confirmadaPorCliente
+        ? idRelacionado(reserva.profesional?.usuario)
+        : idRelacionado(reserva.cliente),
       reserva: reserva._id,
       tipo: TIPOS_NOTIFICACION.CONFIRMACION,
-      mensaje: `Tu reserva para ${reserva.servicio?.nombre || "el servicio"} fue confirmada.`,
+      mensaje: confirmadaPorCliente
+        ? `El cliente confirmó la reserva para ${reserva.servicio?.nombre || "el servicio"}.`
+        : `Tu reserva para ${reserva.servicio?.nombre || "el servicio"} fue confirmada.`,
     });
 
-    // Notificar al cliente la confirmación
-    const datosCorreo: DatosReservaCorreo = {
-      to: reserva.cliente?.email,
-      nombreCliente: reserva.cliente?.nombre || "Cliente",
-      servicio: reserva.servicio?.nombre || "Servicio",
-      profesional: reserva.profesional?.nombre,
-      fecha: reserva.fecha,
-      hora: reserva.hora,
-      codigo: String(reserva._id).slice(-6).toUpperCase(),
-    };
+    if (!confirmadaPorCliente) {
+      const datosCorreo: DatosReservaCorreo = {
+        to: reserva.cliente?.email,
+        nombreCliente: reserva.cliente?.nombre || "Cliente",
+        servicio: reserva.servicio?.nombre || "Servicio",
+        profesional: reserva.profesional?.nombre,
+        fecha: reserva.fecha,
+        hora: reserva.hora,
+        codigo: String(reserva._id).slice(-6).toUpperCase(),
+      };
 
-    MailService.enviarConfirmacionReserva(datosCorreo).catch((error) => {
-      console.error("[MAIL ERROR] Error al enviar correo de confirmación:", error);
-    });
+      MailService.enviarConfirmacionReserva(datosCorreo).catch((error) => {
+        console.error("[MAIL ERROR] Error al enviar correo de confirmación:", error);
+      });
+    }
 
     return reserva;
   }
@@ -336,11 +342,11 @@ export class ReservaService {
   }
 
   /**
-   * Rechaza una reserva.
+   * Rechaza una reserva y notifica a la otra parte.
    */
   static async rechazar(id: string, user: any) {
-    if (user?.rol !== ROLES.ADMIN && user?.rol !== ROLES.PRO) {
-      throw Object.assign(new Error("Solo un profesional puede rechazar una reserva."), {
+    if (![ROLES.ADMIN, ROLES.PRO, ROLES.CLI].includes(user?.rol)) {
+      throw Object.assign(new Error("No tienes permisos para rechazar esta reserva."), {
         statusCode: 403,
       });
     }
@@ -353,11 +359,16 @@ export class ReservaService {
     reserva.estado = ESTADOS_RESERVA.RECHAZADA || "RECHAZADA";
     reserva.minutosOcupados = undefined;
     await reserva.save();
+    const rechazadaPorCliente = user?.rol === ROLES.CLI;
     await NotificacionRepository.crear({
-      usuario: idRelacionado(reserva.cliente),
+      usuario: rechazadaPorCliente
+        ? idRelacionado(reserva.profesional?.usuario)
+        : idRelacionado(reserva.cliente),
       reserva: reserva._id,
       tipo: TIPOS_NOTIFICACION.RECHAZO,
-      mensaje: `El profesional rechazó la solicitud para ${reserva.servicio?.nombre || "el servicio"}.`,
+      mensaje: rechazadaPorCliente
+        ? `El cliente rechazó la reserva para ${reserva.servicio?.nombre || "el servicio"}.`
+        : `El profesional rechazó la solicitud para ${reserva.servicio?.nombre || "el servicio"}.`,
     });
     return reserva;
   }

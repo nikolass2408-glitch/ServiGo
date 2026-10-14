@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bell, CalendarClock, ChartNoAxesCombined, Clock3, Plus, Save, Trash2, Users } from 'lucide-react';
 import API from '../services/api';
-import { DAY_NAMES } from '../services/demoApi';
+
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const tabs = [
   { id: 'servicios', label: 'Servicios' },

@@ -82,7 +82,6 @@ npm install
 Antes de iniciarlo, crea `frontend/.env` con:
 
 ```env
-VITE_DEMO_MODE=false
 VITE_API_URL=http://localhost:3000/api
 ```
 

@@ -8,6 +8,7 @@ import {
   LogOut,
   Eye,
   X,
+  Check,
   RefreshCw,
   Ban
 } from 'lucide-react';
@@ -58,9 +59,13 @@ export default function DashboardCliente() {
     user?.nombre ||
     user?.username ||
     'Cliente';
-  const [activeSection, setActiveSection] = useState('perfil');
+  const [activeSection, setActiveSection] = useState('buscar');
 
   const [servicios, setServicios] = useState([]);
+  const [cargandoServicios, setCargandoServicios] = useState(true);
+  const [errorServicios, setErrorServicios] = useState('');
+  const [busquedaServicio, setBusquedaServicio] = useState('');
+  const [busquedaUbicacion, setBusquedaUbicacion] = useState('');
   const [reservas, setReservas] = useState([]);
   const [cargandoReservas, setCargandoReservas] = useState(true);
   const [errorReservas, setErrorReservas] = useState('');
@@ -84,6 +89,11 @@ export default function DashboardCliente() {
 
   // Servicio que el usuario quiere consultar
   const [servicioVisto, setServicioVisto] = useState(null);
+  const serviciosFiltrados = servicios.filter((servicio) =>
+    `${servicio.nombre} ${servicio.categoria} ${servicio.profesional}`
+      .toLowerCase().includes(busquedaServicio.trim().toLowerCase()) &&
+    servicio.ubicacion.toLowerCase().includes(busquedaUbicacion.trim().toLowerCase())
+  );
 
   useEffect(() => {
     let activo = true;
@@ -115,10 +125,13 @@ export default function DashboardCliente() {
       })
       .catch((error) => {
         if (activo) {
-          setErrorReservas(
+          setErrorServicios(
             error.response?.data?.error || 'No se pudieron cargar los servicios.'
           );
         }
+      })
+      .finally(() => {
+        if (activo) setCargandoServicios(false);
       });
 
     bookingService.getReservas()
@@ -177,7 +190,11 @@ export default function DashboardCliente() {
 
     try {
       let respuesta;
-      if (accion === 'cancelar') {
+      if (accion === 'confirmar') {
+        respuesta = await bookingService.confirmarReserva(reservaSeleccionada.id);
+      } else if (accion === 'rechazar') {
+        respuesta = await bookingService.rechazarReserva(reservaSeleccionada.id);
+      } else if (accion === 'cancelar') {
         respuesta = await bookingService.cancelarReserva(reservaSeleccionada.id);
       } else {
         respuesta = await bookingService.reprogramarReserva(
@@ -189,11 +206,13 @@ export default function DashboardCliente() {
 
       actualizarReserva(respuesta);
       setMostrarReprogramacion(false);
-      setMensajeAccion(
-        accion === 'cancelar'
-            ? 'Cita cancelada.'
-            : 'Cita reprogramada.'
-      );
+      const mensajes = {
+        confirmar: 'Cita confirmada.',
+        rechazar: 'Cita rechazada.',
+        cancelar: 'Cita cancelada.',
+        reprogramar: 'Cita reprogramada.'
+      };
+      setMensajeAccion(mensajes[accion]);
     } catch (error) {
       setErrorAccion(
         error.response?.data?.error || 'No se pudo actualizar la cita. Intenta de nuevo.'
@@ -276,10 +295,7 @@ export default function DashboardCliente() {
             { id: 'buscar', label: 'Buscar servicios', icon: 'search' }
           ]}
           onSelect={(section) => {
-            setActiveSection(section === 'buscar' ? 'buscar' : section);
-            if (section === 'buscar') {
-              requestAnimationFrame(() => document.getElementById('client-search-services')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-            }
+            setActiveSection(section);
           }}
         />
 
@@ -292,7 +308,7 @@ export default function DashboardCliente() {
         {/* =========================
             MIS RESERVAS ACTIVAS
         ========================== */}
-        <section id="client-search-services" style={styles.section}>
+        {activeSection === 'agenda' && <section id="client-bookings" style={styles.section}>
 
           <h2 style={styles.sectionTitle}>
             <Calendar size={20} color="#6b21a8" />
@@ -403,24 +419,31 @@ export default function DashboardCliente() {
 
           </div>
 
-        </section>
+        </section>}
 
-        <ClientNotifications userId={user?.id} bookings={reservas} />
+        {activeSection === 'agenda' && <ClientNotifications userId={user?.id} bookings={reservas} />}
 
         {/* =========================
             EXPLORAR SERVICIOS
         ========================== */}
-        <section style={styles.section}>
+        {activeSection === 'buscar' && <section style={styles.section}>
 
           <h2 style={styles.sectionTitle}>
             <Search size={20} color="#6b21a8" />
-            Explorar nuevos servicios
+            Buscar servicios
           </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
+            <input aria-label="Buscar por servicio" placeholder="Nombre o categoría" value={busquedaServicio} onChange={(event) => setBusquedaServicio(event.target.value)} style={styles.searchInput} />
+            <input aria-label="Buscar por ubicación" placeholder="Ciudad o ubicación" value={busquedaUbicacion} onChange={(event) => setBusquedaUbicacion(event.target.value)} style={styles.searchInput} />
+          </div>
 
 
           <div style={styles.serviciosGrid}>
 
-            {servicios.map((servicio) => (
+            {cargandoServicios ? <p style={styles.emptyText}>Cargando servicios...</p> : errorServicios ? (
+              <p role="alert" style={styles.errorText}>{errorServicios}</p>
+            ) : serviciosFiltrados.map((servicio) => (
 
               <div
                 key={servicio.id}
@@ -442,6 +465,10 @@ export default function DashboardCliente() {
                 {/* PROFESIONAL */}
                 <p style={styles.servicioProvider}>
                   {servicio.profesional}
+                </p>
+
+                <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '14px', lineHeight: 1.5 }}>
+                  {servicio.descripcion || 'Consulta el detalle para conocer este servicio.'}
                 </p>
 
 
@@ -487,8 +514,8 @@ export default function DashboardCliente() {
             ))}
 
           </div>
-
-        </section>
+          {serviciosFiltrados.length === 0 && <p style={styles.emptyText}>No encontramos servicios con esos filtros.</p>}
+        </section>}
           </>
         )}
 
@@ -715,6 +742,18 @@ export default function DashboardCliente() {
               </form>
             ) : (
               <div style={styles.reservationActions}>
+                {['PENDIENTE', 'REPROGRAMADA'].includes(estadoSeleccionado) && (
+                  <>
+                    <button type="button" style={{ ...styles.actionButton, ...styles.actionPrimary }} onClick={() => ejecutarAccionReserva('confirmar')} disabled={Boolean(accionEnCurso)}>
+                      <Check size={15} />
+                      {accionEnCurso === 'confirmar' ? 'Confirmando...' : 'Confirmar cita'}
+                    </button>
+                    <button type="button" style={{ ...styles.actionButton, ...styles.actionDanger }} onClick={() => ejecutarAccionReserva('rechazar')} disabled={Boolean(accionEnCurso)}>
+                      <X size={15} />
+                      {accionEnCurso === 'rechazar' ? 'Rechazando...' : 'Rechazar cita'}
+                    </button>
+                  </>
+                )}
                 {citaActiva && (
                   <>
                     <button
@@ -794,6 +833,10 @@ export default function DashboardCliente() {
               <h3 style={styles.modalServiceTitle}>
                 {servicioVisto.nombre}
               </h3>
+
+              <p style={{ margin: '0 0 16px', color: '#6b7280', lineHeight: 1.6 }}>
+                {servicioVisto.descripcion || 'El prestador ofrece este servicio con reserva previa.'}
+              </p>
 
 
               {/* PROFESIONAL */}
