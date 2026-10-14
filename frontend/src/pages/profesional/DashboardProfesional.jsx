@@ -17,6 +17,7 @@ import PerfilPanel from '../../components/PerfilPanel';
 import ProfessionalWorkspace from '../../components/ProfessionalWorkspace';
 import BrandMark from '../../components/BrandMark';
 import NotificationBell from '../../components/NotificationBell';
+import DashboardSidebar from '../../components/DashboardSidebar';
 
 const normalizarCita = (cita) => {
   const estadoCode = String(cita.estado || 'PENDIENTE').toUpperCase();
@@ -34,6 +35,7 @@ const normalizarCita = (cita) => {
 export default function DashboardProfesional() {
   const { user, logout } = useAuth();
   const [profileRevision, setProfileRevision] = useState(0);
+  const [activeSection, setActiveSection] = useState('perfil');
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -242,9 +244,20 @@ export default function DashboardProfesional() {
       </header>
 
 
-      {/* CONTENIDO */}
+      <div className="dashboard-layout">
+        <DashboardSidebar
+          role="Prestador de servicio"
+          userName={[user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username}
+          activeId={activeSection}
+          items={[
+            { id: 'perfil', label: 'Perfil', icon: 'profile' },
+            { id: 'agenda', label: 'Agenda de citas', icon: 'agenda', count: reservasActivas },
+            { id: 'servicios', label: 'Mis servicios', icon: 'services' }
+          ]}
+          onSelect={setActiveSection}
+        />
 
-      <main style={styles.content}>
+      <main className="dashboard-main" style={styles.content}>
 
         <div>
           <h1 style={styles.mainTitle}>
@@ -256,12 +269,16 @@ export default function DashboardProfesional() {
           </p>
         </div>
 
-        <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
-        <ProfessionalWorkspace key={profileRevision} user={user} />
+        {activeSection === 'perfil' && (
+          <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
+        )}
+        {activeSection === 'servicios' && (
+          <ProfessionalWorkspace key={profileRevision} user={user} />
+        )}
 
         {/* ERROR */}
 
-        {error && (
+        {activeSection === 'agenda' && error && (
           <div style={styles.error}>
             {error}
           </div>
@@ -270,6 +287,7 @@ export default function DashboardProfesional() {
 
         {/* MÉTRICAS */}
 
+        {activeSection === 'agenda' && <>
         <div style={styles.metrics}>
 
           <div style={styles.card}>
@@ -482,8 +500,10 @@ export default function DashboardProfesional() {
           </div>
 
         </section>
+        </>}
 
       </main>
+      </div>
 
 
       {/* MODAL */}
@@ -778,9 +798,10 @@ const styles = {
   },
 
   content: {
-    maxWidth: '1100px',
+    width: '100%',
+    maxWidth: 'none',
     margin: '30px auto',
-    padding: '0 20px'
+    padding: '0'
   },
 
   mainTitle: {

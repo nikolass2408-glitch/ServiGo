@@ -10,7 +10,6 @@ import {
 
 import { useAuth } from '../../context/AuthContext';
 import BrandMark from '../../components/BrandMark';
-import { demoCredentials } from '../../services/demoApi';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -185,22 +184,6 @@ export default function Login() {
 
             </div>
 
-          </div>
-
-          <div style={styles.demoAccess}>
-            <span>Cuenta de demostración: {demoCredentials[rol].email}</span>
-            <span>Contraseña: {demoCredentials[rol].password}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername(demoCredentials[rol].email);
-                setPassword(demoCredentials[rol].password);
-              }}
-              style={styles.demoButton}
-            >
-              Usar cuenta demo
-            </button>
-            <small>Los datos de esta demo se guardan solo en este navegador.</small>
           </div>
 
           {/* CONTRASEÑA */}
@@ -446,30 +429,6 @@ const styles = {
     display: 'flex',
     justifyContent: 'flex-end',
     marginTop: '-10px'
-  },
-
-  demoAccess: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-    marginTop: '-10px',
-    padding: '11px',
-    borderRadius: '9px',
-    backgroundColor: '#faf5ff',
-    color: '#581c87',
-    fontSize: '12px'
-  },
-
-  demoButton: {
-    alignSelf: 'flex-start',
-    padding: '5px 8px',
-    border: '1px solid #e9d5ff',
-    borderRadius: '6px',
-    backgroundColor: '#ffffff',
-    color: '#6b21a8',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer'
   },
 
   submitBtn: {

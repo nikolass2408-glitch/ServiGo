@@ -33,41 +33,84 @@ Flujo:
 
 `Frontend -> Routes -> Controllers -> Services -> Repositories -> Models -> MongoDB`
 
-## Instalación
+## Instalación y ejecución
 
-1. Entra a `backend`.
-2. Ejecuta `npm install`.
-3. Copia `.env.example` como `.env`.
-4. Completa `MONGO_URI` y `JWT_SECRET`.
-5. Para entregar enlaces de recuperación y recordatorios por correo, configura `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS`, `MAIL_FROM` y `FRONTEND_URL`.
-6. Ejecuta `npm run dev`.
+ServiGo usa el frontend React, una API Express y MongoDB Atlas. Inicia el backend y el frontend en terminales separadas.
 
-En desarrollo local, si SMTP no está configurado, puedes activar `PASSWORD_RESET_LOG_LINK=true` para imprimir el enlace de recuperación en la terminal. No lo actives en producción.
+### 1. Configurar MongoDB Atlas
 
-El backend revisa cada minuto las citas activas y genera una notificación automática al cliente una hora antes. El envío por correo requiere SMTP; la notificación dentro de ServiGo no depende de ese servicio. Configura `TZ` con la zona horaria de los profesionales (por defecto `America/Bogota`). Los logos se cargan como PNG, JPEG o WebP de hasta 5 MB. El backend los guarda en `backend/uploads`; conserva esa carpeta en un volumen persistente al desplegar, o conecta almacenamiento de objetos antes de usar instancias efímeras.
+- Crea o reanuda un clúster de MongoDB Atlas.
+- En **Network Access**, autoriza la IP desde la que se ejecutará el backend.
+- Crea un usuario de base de datos y copia la URI de conexión del clúster.
 
-## Modo demo funcional
+### 2. Configurar e iniciar el backend
 
-El frontend se ejecuta por defecto en modo demo y guarda usuarios, perfiles, servicios, horarios, bloqueos, reservas y notificaciones en el almacenamiento local del navegador. No necesita MongoDB ni sincroniza datos entre navegadores. Los recordatorios demo se actualizan mientras el panel del cliente está abierto; para procesarlos con el navegador cerrado se debe usar la API real.
+Desde la carpeta del proyecto:
 
-1. Entra a `frontend` y ejecuta `npm install` y `npm run dev`.
-2. Inicia sesión con una cuenta de demostración:
+```powershell
+cd backend
+npm install
+Copy-Item .env.example .env
+```
 
-| Rol | Correo | Contraseña |
-| --- | --- | --- |
-| Cliente | `cliente@servigo.demo` | `Cliente123` |
-| Profesional | `profesional@servigo.demo` | `ProServiGo123` |
-| Administrador | `admin@servigo.demo` | `Admin1234` |
+Edita `backend/.env` y configura las dos variables necesarias:
 
-También puedes crear cuentas nuevas desde Registro. En demo se pueden cargar logos PNG, JPEG o WebP de hasta 2 MB y guardarlos con el perfil. Para borrar los datos y restaurar el estado inicial, elimina la clave `servigo_demo_data_v1` del almacenamiento local del sitio en el navegador.
+```env
+MONGO_URI=mongodb+srv://USUARIO:CONTRASENA@CLUSTER/servigo?retryWrites=true&w=majority
+JWT_SECRET=una_clave_larga_aleatoria_y_secreta
+```
 
-Para usar la API real, configura `VITE_DEMO_MODE=false` y `VITE_API_URL` (por ejemplo `http://localhost:3000/api`) en el entorno del frontend y ejecuta el backend con MongoDB y las variables de entorno configuradas.
+Reemplaza los valores de ejemplo con las credenciales y el host de tu clúster. Si la contraseña contiene caracteres especiales, codifícala para una URI. No compartas ni subas `backend/.env`; está excluido de Git.
 
-Para producción:
+Inicia la API:
 
-```bash
+```powershell
+npm run dev
+```
+
+La API queda disponible en `http://localhost:3000/api/`. Al abrir esa dirección debe responder con el estado de la API. El servidor solo inicia después de conectarse a MongoDB.
+
+### 3. Configurar e iniciar el frontend
+
+En otra terminal, desde la carpeta del proyecto:
+
+```powershell
+cd frontend
+npm install
+```
+
+Antes de iniciarlo, crea `frontend/.env` con:
+
+```env
+VITE_DEMO_MODE=false
+VITE_API_URL=http://localhost:3000/api
+```
+
+Luego ejecuta `npm run dev` desde `frontend`.
+
+Abre `http://localhost:5173`. Deja ambas terminales ejecutándose mientras utilizas ServiGo. Si modificas las variables `VITE_*`, reinicia Vite para que aplique los cambios.
+
+### Configuración opcional
+
+El backend usa por defecto el puerto `3000` y la zona horaria `America/Bogota`. Para enviar correos de confirmación, recordatorios o recuperación de contraseña, configura los datos SMTP (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASS` y, opcionalmente, `MAIL_FROM`) en `backend/.env`. Sin esas credenciales, el envío de correos no estará disponible.
+
+Si el DNS del equipo no puede resolver el registro SRV de Atlas, agrega `DNS_SERVERS=1.1.1.1,8.8.8.8` a `backend/.env`. No hace falta configurarlo cuando la conexión funciona con el DNS habitual.
+
+El backend revisa cada minuto las citas activas y genera una notificación una hora antes. Las notificaciones dentro de ServiGo no dependen del correo. Los logos admiten PNG, JPEG o WebP de hasta 5 MB; se guardan en `backend/uploads`, que debe conservarse en almacenamiento persistente al desplegar.
+
+### Compilación
+
+Para compilar el backend, desde `backend`:
+
+```powershell
 npm run build
 npm start
+```
+
+Para compilar el frontend, desde `frontend`:
+
+```powershell
+npm run build
 ```
 
 ## Seguridad

@@ -4,12 +4,15 @@ import BrandMark from '../../components/BrandMark';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
 import NotificationBell from '../../components/NotificationBell';
+import DashboardSidebar from '../../components/DashboardSidebar';
+import PerfilPanel from '../../components/PerfilPanel';
 
 const roleName = (role) => ({ CLI: 'Cliente', PRO: 'Profesional', ADMIN: 'Administrador' }[role] || role);
 const statusName = (active) => active ? 'Activa' : 'Desactivada';
 
 export default function DashboardAdmin() {
   const { user, logout } = useAuth();
+  const [activeSection, setActiveSection] = useState('perfil');
   const [users, setUsers] = useState([]);
   const [professionals, setProfessionals] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -115,7 +118,23 @@ export default function DashboardAdmin() {
         </div>
       </header>
 
-      <main style={styles.content}>
+      <div className="dashboard-layout">
+        <DashboardSidebar
+          role="Administrador"
+          userName={[user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username}
+          activeId={activeSection}
+          items={[
+            { id: 'perfil', label: 'Perfil', icon: 'profile' },
+            { id: 'usuarios', label: 'Usuarios', icon: 'users' },
+            { id: 'profesionales', label: 'Profesionales', icon: 'professionals' },
+            { id: 'reservas', label: 'Reservas', icon: 'bookings', count: bookings.length }
+          ]}
+          onSelect={(section) => {
+            setActiveSection(section);
+            requestAnimationFrame(() => document.getElementById(`admin-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          }}
+        />
+      <main className="dashboard-main" style={styles.content}>
         <div style={styles.titleRow}>
           <div>
             <h1 style={styles.mainTitle}>Panel administrativo</h1>
@@ -127,6 +146,10 @@ export default function DashboardAdmin() {
         {error && <p role="alert" style={styles.error}>{error}</p>}
         {message && <p role="status" style={styles.success}>{message}</p>}
 
+        <section id="admin-perfil" style={styles.section}>
+          <PerfilPanel />
+        </section>
+
         <section style={styles.metrics}>
           <Metric icon={<Users size={19} />} label="Usuarios registrados" value={loading ? '…' : stats?.usuarios ?? users.length} />
           <Metric icon={<Briefcase size={19} />} label="Profesionales activos" value={loading ? '…' : stats?.profesionales ?? professionals.filter((item) => item.activo).length} />
@@ -134,7 +157,7 @@ export default function DashboardAdmin() {
           <Metric icon={<ShieldCheck size={19} />} label="Citas completadas" value={loading ? '…' : stats?.citasCompletadas ?? 0} />
         </section>
 
-        <section style={styles.section}>
+        <section id="admin-usuarios" style={styles.section}>
           <h2 style={styles.sectionTitle}>Gestión de usuarios y clientes</h2>
           <div style={styles.tableWrap}>
             <table style={styles.table}>
@@ -159,7 +182,7 @@ export default function DashboardAdmin() {
           </div>
         </section>
 
-        <section style={styles.section}>
+        <section id="admin-profesionales" style={styles.section}>
           <h2 style={styles.sectionTitle}>Gestión de profesionales</h2>
           <div style={styles.tableWrap}>
             <table style={styles.table}>
@@ -187,7 +210,7 @@ export default function DashboardAdmin() {
           </div>
         </section>
 
-        <section style={styles.section}>
+        <section id="admin-reservas" style={styles.section}>
           <h2 style={styles.sectionTitle}>Supervisión de reservas</h2>
           <div style={styles.tableWrap}>
             <table style={styles.table}>
@@ -210,6 +233,7 @@ export default function DashboardAdmin() {
           </div>
         </section>
       </main>
+      </div>
     </div>
   );
 }
@@ -226,7 +250,7 @@ const styles = {
   userMenu: { display: 'flex', alignItems: 'center', gap: '16px' },
   userName: { color: '#374151', fontSize: '14px', fontWeight: 600 },
   logout: { display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'transparent', color: '#b91c1c', cursor: 'pointer' },
-  content: { maxWidth: '1200px', display: 'flex', flexDirection: 'column', gap: '28px', margin: '32px auto', padding: '0 20px' },
+  content: { width: '100%', maxWidth: 'none', display: 'flex', flexDirection: 'column', gap: '28px', margin: '30px auto', padding: 0 },
   titleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' },
   mainTitle: { margin: 0, color: '#1f2937', fontSize: '28px', fontWeight: 800 },
   mainSubtitle: { margin: '7px 0 0', color: '#6b7280', fontSize: '14px' },

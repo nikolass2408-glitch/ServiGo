@@ -9,11 +9,7 @@ import {
   Eye,
   X,
   RefreshCw,
-  Ban,
-  CalendarDays,
-  PanelLeftClose,
-  PanelLeftOpen,
-  UserRound
+  Ban
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -24,6 +20,7 @@ import API from '../../services/api';
 import PerfilPanel from '../../components/PerfilPanel';
 import ClientNotifications from '../../components/ClientNotifications';
 import NotificationBell from '../../components/NotificationBell';
+import DashboardSidebar from '../../components/DashboardSidebar';
 
 const normalizarReserva = (reserva) => {
   const servicio = typeof reserva.servicio === 'object' ? reserva.servicio : {};
@@ -62,7 +59,6 @@ export default function DashboardCliente() {
     user?.username ||
     'Cliente';
   const [activeSection, setActiveSection] = useState('perfil');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [servicios, setServicios] = useState([]);
   const [reservas, setReservas] = useState([]);
@@ -269,46 +265,23 @@ export default function DashboardCliente() {
       {/* =========================
           CONTENIDO PRINCIPAL
       ========================== */}
-      <div className={`client-layout${sidebarCollapsed ? ' client-layout--collapsed' : ''}`}>
-        <aside className="client-sidebar" aria-label="Navegación del cliente">
-          <div className="client-sidebar__heading">
-            {!sidebarCollapsed && <span>Mi espacio</span>}
-            <button
-              type="button"
-              className="client-sidebar__toggle"
-              onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
-              aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
-              title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            </button>
-          </div>
-          <nav className="client-sidebar__nav" aria-label="Secciones">
-            <button
-              type="button"
-              className={`client-sidebar__link${activeSection === 'perfil' ? ' is-active' : ''}`}
-              onClick={() => setActiveSection('perfil')}
-              aria-current={activeSection === 'perfil' ? 'page' : undefined}
-              title={sidebarCollapsed ? 'Perfil' : undefined}
-            >
-              <UserRound size={18} />
-              {!sidebarCollapsed && <span>Perfil</span>}
-            </button>
-            <button
-              type="button"
-              className={`client-sidebar__link${activeSection === 'agenda' ? ' is-active' : ''}`}
-              onClick={() => setActiveSection('agenda')}
-              aria-current={activeSection === 'agenda' ? 'page' : undefined}
-              title={sidebarCollapsed ? 'Agenda de citas' : undefined}
-            >
-              <CalendarDays size={18} />
-              {!sidebarCollapsed && <span>Agenda de citas</span>}
-              {!sidebarCollapsed && reservas.length > 0 && (
-                <span className="client-sidebar__count">{reservas.length}</span>
-              )}
-            </button>
-          </nav>
-        </aside>
+      <div className="client-layout">
+        <DashboardSidebar
+          role="Cliente"
+          userName={nombreUsuario}
+          activeId={activeSection}
+          items={[
+            { id: 'perfil', label: 'Perfil', icon: 'profile' },
+            { id: 'agenda', label: 'Agenda de citas', icon: 'agenda', count: reservas.length },
+            { id: 'buscar', label: 'Buscar servicios', icon: 'search' }
+          ]}
+          onSelect={(section) => {
+            setActiveSection(section === 'buscar' ? 'buscar' : section);
+            if (section === 'buscar') {
+              requestAnimationFrame(() => document.getElementById('client-search-services')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            }
+          }}
+        />
 
         <main className="client-main" style={styles.content}>
         {activeSection === 'perfil' ? (
@@ -319,7 +292,7 @@ export default function DashboardCliente() {
         {/* =========================
             MIS RESERVAS ACTIVAS
         ========================== */}
-        <section style={styles.section}>
+        <section id="client-search-services" style={styles.section}>
 
           <h2 style={styles.sectionTitle}>
             <Calendar size={20} color="#6b21a8" />
