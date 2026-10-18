@@ -1,4 +1,3 @@
-import React from 'react';
 import BrandMark from './BrandMark';
 
 export default function Footer() {
@@ -17,8 +16,8 @@ export default function Footer() {
 
         {/* LADO DERECHO: Links de navegación */}
         <div style={styles.linksColumn}>
-          <a href="#inicio" style={styles.link}>Inicio</a>
-          <a href="#servicios" style={styles.link}>Explorar servicios</a>
+          <a href="#servicios" style={styles.link}>Servicios</a>
+          <a href="#profesionales" style={styles.link}>Profesionales</a>
           <a href="#funciona" style={styles.link}>¿Cómo funciona?</a>
           <a href="#contacto" style={styles.link}>Contacto</a>
         </div>

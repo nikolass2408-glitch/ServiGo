@@ -12,6 +12,8 @@ export interface IUsuario extends Document {
   activo: boolean;
   passwordResetTokenHash?: string;
   passwordResetExpiresAt?: Date;
+  invitacionTokenHash?: string;
+  invitacionExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +25,8 @@ const usuarioSchema = new Schema<IUsuario>(
     password: { type: String, required: true, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },
+    invitacionTokenHash: { type: String, select: false },
+    invitacionExpiresAt: { type: Date, select: false },
     firstName: { type: String, default: "", trim: true },
     lastName: { type: String, default: "", trim: true },
     rol: { type: String, enum: Object.values(ROLES), default: ROLES.CLI },

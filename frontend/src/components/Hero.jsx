@@ -1,138 +1,68 @@
-import BrandMark from './BrandMark';
 import { Link } from 'react-router-dom';
+import { CalendarDays, Check, House, Search, UserRound } from 'lucide-react';
+import './HomeLanding.css';
 
 export default function Hero() {
   return (
-    <>
-      <section id="inicio" style={styles.heroSection}>
-        <div style={styles.contentWrap}>
+    <section id="portada" className="home-hero" style={styles.heroSection}>
+        <div className="home-hero__layout" style={styles.contentWrap}>
           <div style={styles.leftColumn}>
-            <div style={styles.brandRow}>
-              <BrandMark size={54} />
-              <span style={styles.brandText}>ServiGo</span>
-            </div>
-
             <div style={styles.badge}>
-              Bienvenidos a ServiGo
+              Tu cita, en un solo lugar
             </div>
 
             <h1 style={styles.title}>
-              Tu agenda inteligente para
-              <span style={styles.titleHighlight}> servicios de confianza.</span>
+              Agenda tu próximo servicio,
+              <span style={styles.titleHighlight}> fácil y rápido.</span>
             </h1>
 
             <p style={styles.subtitle}>
-              Conectamos a clientes y profesionales para reservar, organizar y
-              gestionar citas de forma rápida, segura y sencilla.
+              Encuentra profesionales, consulta sus servicios y reserva tu cita en pocos minutos.
             </p>
 
             <div style={styles.buttonGroup}>
-              <a href="#servicios" style={styles.btnPrimary}>🔍 Buscar un servicio</a>
+              <a href="#servicios" style={styles.btnPrimary}><Search size={16} />Buscar un servicio</a>
               <Link to="/registro" style={styles.btnSecondary}>Soy profesional</Link>
             </div>
+          </div>
 
-            <div style={styles.metricsRow}>
-              <div style={styles.metricBox}>
-                <strong style={styles.metricValue}>4.9/5</strong>
-                <span style={styles.metricLabel}>Valoración</span>
-              </div>
-              <div style={styles.metricBox}>
-                <strong style={styles.metricValue}>500+</strong>
-                <span style={styles.metricLabel}>Profesionales</span>
-              </div>
-              <div style={styles.metricBox}>
-                <strong style={styles.metricValue}>24/7</strong>
-                <span style={styles.metricLabel}>Disponibilidad</span>
+          <div className="home-hero__visual" aria-label="Vista de agenda y calendario">
+            <div className="home-hero__phone">
+              <div className="home-hero__speaker" />
+              <div className="home-hero__screen">
+                <div className="home-hero__app-brand"><span>S</span> ServiGo</div>
+                <div className="home-hero__appointment-title">Tu próxima cita</div>
+                <div className="home-hero__appointment">
+                  <span className="home-hero__service-icon"><CalendarDays size={17} /></span>
+                  <span><strong>Agenda tu servicio</strong><small>Elige fecha y horario</small></span>
+                  <Check size={15} className="home-hero__check" />
+                </div>
+                <div className="home-hero__phone-nav"><House size={15} /><Search size={15} /><CalendarDays size={15} /><UserRound size={15} /></div>
               </div>
             </div>
-          </div>
-
-          <div style={styles.visualPanel}>
-            <div style={styles.cardMain}>
-              <div style={styles.cardHeader}>
-                <span style={styles.cardTag}>Hoy</span>
-                <span style={styles.cardStatus}>Disponibilidad alta</span>
-              </div>
-
-              <div style={styles.serviceItem}>
-                <div style={styles.avatar}>✂️</div>
-                <div>
-                  <strong>Corte de cabello</strong>
-                  <div style={styles.meta}>10:00 AM · Confirmada</div>
-                </div>
-              </div>
-
-              <div style={styles.serviceItem}>
-                <div style={styles.avatar}>💅</div>
-                <div>
-                  <strong>Manicura</strong>
-                  <div style={styles.meta}>12:30 PM · Disponible</div>
-                </div>
-              </div>
-
-              <div style={styles.serviceItem}>
-                <div style={styles.avatar}>🧖</div>
-                <div>
-                  <strong>Masaje relajante</strong>
-                  <div style={styles.meta}>3:00 PM · Próximo</div>
-                </div>
-              </div>
+            <div className="home-hero__calendar">
+              <div className="home-hero__calendar-heading"><strong>Elige una fecha</strong><span>›</span></div>
+              <div className="home-hero__weekdays"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+              <div className="home-hero__days">{Array.from({ length: 21 }, (_, index) => <span key={index} className={index === 13 ? 'is-selected' : ''}>{index + 1}</span>)}</div>
             </div>
+            <span className="home-hero__floating-check"><Check size={22} /></span>
           </div>
         </div>
-      </section>
-
-      <section id="quienes-somos" style={styles.aboutSection}>
-        <div style={styles.aboutHeader}>
-          <p style={styles.sectionEyebrow}>Quiénes somos</p>
-          <h2 style={styles.sectionTitle}>Una plataforma hecha para facilitar tu día a día.</h2>
-        </div>
-
-        <div style={styles.aboutGrid}>
-          <div style={styles.infoCard}>
-            <div style={styles.iconCircle}>🎯</div>
-            <h3 style={styles.cardTitle}>Nuestra misión</h3>
-            <p style={styles.cardText}>
-              Ayudar a personas y negocios a organizar servicios, reservas y horarios de
-              manera más clara y eficiente.
-            </p>
-          </div>
-
-          <div style={styles.infoCard}>
-            <div style={styles.iconCircle}>🤝</div>
-            <h3 style={styles.cardTitle}>Nuestra comunidad</h3>
-            <p style={styles.cardText}>
-              ServiGo reúne profesionales independientes y clientes que buscan confianza,
-              calidad y rapidez en cada cita.
-            </p>
-          </div>
-
-          <div style={styles.infoCard}>
-            <div style={styles.iconCircle}>✨</div>
-            <h3 style={styles.cardTitle}>Nuestra promesa</h3>
-            <p style={styles.cardText}>
-              Diseñamos una experiencia moderna para que reservar un servicio sea sencillo,
-              cómodo y sin complicaciones.
-            </p>
-          </div>
-        </div>
-      </section>
-    </>
+    </section>
   );
 }
 
 const styles = {
   heroSection: {
-    background: 'linear-gradient(135deg, #faf5ff 0%, #f5f3ff 40%, #ffffff 100%)',
-    padding: '48px 80px 28px',
+    background: 'transparent',
+    padding: '34px 32px 22px',
     fontFamily: 'sans-serif'
   },
   contentWrap: {
-    display: 'flex',
-    justifyContent: 'space-between',
+    display: 'grid',
     alignItems: 'center',
-    gap: '32px',
-    maxWidth: '1200px',
+    gap: '24px',
+    maxWidth: '1120px',
     margin: '0 auto'
   },
   leftColumn: {
@@ -154,39 +84,41 @@ const styles = {
     display: 'inline-block',
     backgroundColor: '#f3e8ff',
     color: '#7e22ce',
-    fontSize: '13px',
+    fontSize: '12px',
     fontWeight: '700',
-    padding: '7px 14px',
+    padding: '6px 12px',
     borderRadius: '999px',
-    marginBottom: '20px',
-    letterSpacing: '0.3px'
+    marginBottom: '14px'
   },
   title: {
-    fontSize: '52px',
+    fontSize: '42px',
     fontWeight: '900',
     lineHeight: '1.08',
     color: '#1f2937',
     margin: '0 0 18px',
-    letterSpacing: '-1px'
+    letterSpacing: '0'
   },
   titleHighlight: {
     display: 'block',
     color: '#7c3aed'
   },
   subtitle: {
-    fontSize: '18px',
-    lineHeight: '1.6',
+    fontSize: '16px',
+    lineHeight: '1.5',
     color: '#4b5563',
-    marginBottom: '28px',
+    marginBottom: '22px',
     maxWidth: '560px'
   },
   buttonGroup: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '16px',
-    marginBottom: '28px'
+    gap: '12px',
+    marginBottom: '8px'
   },
   btnPrimary: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
     backgroundColor: '#6b21a8',
     color: '#ffffff',
     border: 'none',
@@ -195,9 +127,12 @@ const styles = {
     fontSize: '15px',
     fontWeight: '700',
     cursor: 'pointer',
+    textDecoration: 'none',
     boxShadow: '0 8px 24px rgba(107, 33, 168, 0.18)'
   },
   btnSecondary: {
+    display: 'inline-flex',
+    alignItems: 'center',
     backgroundColor: 'transparent',
     color: '#374151',
     border: '1.5px solid #d1d5db',

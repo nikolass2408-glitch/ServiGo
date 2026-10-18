@@ -8,7 +8,8 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 
 export class ProfesionalController {
   static async listar(req: Request, res: Response) {
-    res.json(await ProfesionalRepository.listarTodos());
+    const profesionales = await ProfesionalRepository.listarTodos();
+    res.json(profesionales.filter((profesional: any) => profesional.activo));
   }
   static async crear(req: AuthRequest, res: Response) {
     res.status(201).json(await ProfesionalService.crear(req.body, req.user));

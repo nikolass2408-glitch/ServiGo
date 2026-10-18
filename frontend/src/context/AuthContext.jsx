@@ -17,6 +17,8 @@ const normalizarRol = (rol) => {
   if (['PRO', 'PROF', 'PROFESIONAL', 'PRESTADOR'].includes(r))
     return 'profesional';
 
+  if (['DUENO', 'DUEÑO', 'OWNER'].includes(r)) return 'dueno';
+
   if (['ADM', 'ADMIN', 'ADMINISTRADOR'].includes(r)) return 'admin';
 
   return String(rol || '').toLowerCase();
@@ -102,6 +104,8 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Context hooks are intentionally exported beside their provider.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

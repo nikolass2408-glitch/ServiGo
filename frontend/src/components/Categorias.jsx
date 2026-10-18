@@ -1,8 +1,21 @@
 import { useEffect, useState } from 'react';
 // Importamos los íconos de la librería lucide-react para las categorías
-import { Scissors, Sparkles, Heart, PenTool, Dumbbell, MoreHorizontal, Search, MapPin } from 'lucide-react';
+import { Scissors, Sparkles, Heart, PenTool, Dumbbell, MoreHorizontal, Search, MapPin, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import API from '../services/api';
+
+const nombresCategoria = {
+  BARBERIA: 'Barbería',
+  SPA: 'Belleza y bienestar',
+  GIMNASIO: 'Entrenamiento',
+  FOTOGRAFIA: 'Fotografía',
+  RESTAURANTE: 'Restaurante',
+  EDUCACION: 'Educación',
+  MASCOTAS: 'Mascotas',
+  SALUD: 'Salud',
+  AUTOMOTRIZ: 'Automotriz',
+  OTRO: 'Otros'
+};
 
 export default function Categorias() {
   const [busqueda, setBusqueda] = useState('');
@@ -10,6 +23,7 @@ export default function Categorias() {
   const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [mostrarResultados, setMostrarResultados] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -27,6 +41,7 @@ export default function Categorias() {
           return {
             ...servicio,
             id: servicio._id || servicio.id,
+            categoria: nombresCategoria[profesional.tipoNegocio] || 'Servicios',
             profesional: profesional.nombreNegocio || profesional.nombre || 'Profesional ServiGo',
             ubicacion: profesional.direccion || '',
             enlacePersonalizado: profesional.enlacePersonalizado
@@ -42,10 +57,11 @@ export default function Categorias() {
     return () => { activo = false; };
   }, []);
 
+  const normalizarTexto = (valor) => String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const serviciosFiltrados = servicios.filter((servicio) =>
-    `${servicio.nombre} ${servicio.categoria || ''} ${servicio.profesional}`
-      .toLowerCase().includes(busqueda.trim().toLowerCase()) &&
-    servicio.ubicacion.toLowerCase().includes(ubicacion.trim().toLowerCase())
+    normalizarTexto(`${servicio.nombre} ${servicio.categoria || ''} ${servicio.profesional}`)
+      .includes(normalizarTexto(busqueda.trim())) &&
+    normalizarTexto(servicio.ubicacion).includes(normalizarTexto(ubicacion.trim()))
   );
 
   // Lista de categorías con sus íconos y nombres
@@ -61,10 +77,13 @@ export default function Categorias() {
   return (
     <section id="servicios" style={styles.section}>
       {/* Título de la sección */}
-      <h2 style={styles.title}>¿Qué servicio estás buscando?</h2>
+      <div style={styles.sectionHeading}>
+        <span style={styles.eyebrow}>DESCUBRE SERVIGO</span>
+        <h2 style={styles.title}>¿Qué servicio estás buscando?</h2>
+      </div>
 
       {/* BARRA DE BÚSQUEDA */}
-      <form style={styles.searchContainer} onSubmit={(event) => event.preventDefault()}>
+      <form style={styles.searchContainer} onSubmit={(event) => { event.preventDefault(); setMostrarResultados(true); }}>
         {/* Campo de búsqueda por servicio */}
         <div style={styles.inputGroup}>
           <Search size={18} color="#9ca3af" />
@@ -95,8 +114,12 @@ export default function Categorias() {
 
       {/* REJILLA DE CATEGORÍAS */}
       <div style={styles.grid}>
+        <button type="button" style={styles.categoryCard} onClick={() => { setBusqueda(''); setMostrarResultados(true); }}>
+          <span style={styles.categoryAll}><BriefcaseBusiness size={16} /></span>
+          <span style={styles.categoryName}>Todos los servicios</span>
+        </button>
         {listaCategorias.map((item) => (
-          <button key={item.id} type="button" style={styles.categoryCard} onClick={() => setBusqueda(item.nombre)}>
+          <button key={item.id} type="button" style={styles.categoryCard} onClick={() => { setBusqueda(item.nombre); setMostrarResultados(true); }}>
             <div style={styles.iconCircle}>
               {item.icon}
             </div>
@@ -105,20 +128,21 @@ export default function Categorias() {
         ))}
       </div>
 
-      <div style={styles.results}>
+      {mostrarResultados && <div style={styles.results}>
         {cargando ? <p>Cargando servicios...</p> : error ? <p role="alert">{error}</p> : serviciosFiltrados.length ? (
           serviciosFiltrados.map((servicio) => (
             <article key={servicio.id} style={styles.serviceCard}>
               <span style={styles.categoryName}>{servicio.categoria || 'Servicio'}</span>
               <h3 style={styles.serviceTitle}>{servicio.nombre}</h3>
-              <p>{servicio.profesional} · {servicio.ubicacion || 'Ubicación por confirmar'}</p>
-              <p>{servicio.descripcion || 'Servicio disponible para reservar.'}</p>
-              <p>${Number(servicio.precio || 0).toLocaleString()} COP · {servicio.duracion} min</p>
+              <p style={styles.provider}>{servicio.profesional}</p>
+              <p style={styles.address}>{servicio.ubicacion || 'Dirección por confirmar'}</p>
+              <p style={styles.description}>{servicio.descripcion || 'Servicio disponible para reservar.'}</p>
+              <p style={styles.details}>${Number(servicio.precio || 0).toLocaleString()} COP · {servicio.duracion} min</p>
               {servicio.enlacePersonalizado && <Link to={`/p/${servicio.enlacePersonalizado}`} style={styles.profileLink}>Ver</Link>}
             </article>
           ))
         ) : <p>No encontramos servicios con esos filtros.</p>}
-      </div>
+      </div>}
     </section>
   );
 }
@@ -126,24 +150,24 @@ export default function Categorias() {
 // ESTILOS DE LA SECCIÓN
 const styles = {
   section: {
-    padding: '60px 40px',
+    padding: '28px 32px 40px',
     backgroundColor: '#ffffff',
     textAlign: 'center',
     fontFamily: 'sans-serif'
   },
   title: {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#1f2937',
-    marginBottom: '32px'
+    margin: '0 0 18px'
   },
   searchContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     gap: '12px',
-    maxWidth: '800px',
-    margin: '0 auto 48px auto',
+    maxWidth: '760px',
+    margin: '0 auto 18px',
     flexWrap: 'wrap'
   },
   inputGroup: {
@@ -152,8 +176,8 @@ const styles = {
     gap: '8px',
     backgroundColor: '#f9fafb',
     border: '1px solid #e5e7eb',
-    borderRadius: '24px',
-    padding: '10px 18px',
+    borderRadius: '999px',
+    padding: '10px 16px',
     flex: '1',
     minWidth: '220px'
   },
@@ -169,7 +193,7 @@ const styles = {
     backgroundColor: '#6b21a8',
     color: '#ffffff',
     border: 'none',
-    borderRadius: '24px',
+    borderRadius: '999px',
     padding: '12px 32px',
     fontSize: '14px',
     fontWeight: '600',
@@ -178,21 +202,24 @@ const styles = {
   grid: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '32px',
+    gap: '24px',
     flexWrap: 'wrap',
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto'
   },
   categoryCard: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '12px',
+    gap: '8px',
     cursor: 'pointer',
     border: 0,
     background: 'transparent',
-    padding: 0
+    padding: 0,
+    color: '#2d2544',
+    font: 'inherit'
   },
+  categoryAll: { display: 'grid', width: '40px', height: '40px', placeItems: 'center', borderRadius: '50%', background: '#f3e8ff', color: '#6b21a8' },
   results: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', maxWidth: '1000px', margin: '36px auto 0', textAlign: 'left' },
   serviceCard: { padding: '18px', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#fff' },
   serviceTitle: { margin: '8px 0', color: '#1f2937' },

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Lock,
   UserCheck,
@@ -13,13 +13,14 @@ import BrandMark from '../../components/BrandMark';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { login, logout } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const [rol, setRol] = useState('cliente');
+  const [rol, setRol] = useState(location.state?.rol || 'cliente');
 
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
@@ -55,6 +56,11 @@ export default function Login() {
         );
       }
 
+      if (rol === 'dueno' && usuario.rol !== 'dueno') {
+        logout();
+        throw new Error('La cuenta ingresada no corresponde al dueño de una empresa.');
+      }
+
       if (rol === 'admin' && usuario.rol !== 'admin') {
         logout();
         throw new Error(
@@ -64,11 +70,13 @@ export default function Login() {
 
       // REDIRECCIÓN
       if (usuario.rol === 'cliente') {
-        navigate('/cliente');
+        navigate('/cliente/servicios');
       } else if (usuario.rol === 'profesional') {
         navigate('/profesional');
       } else if (usuario.rol === 'admin') {
         navigate('/admin');
+      } else if (usuario.rol === 'dueno') {
+        navigate('/dueno');
       } else {
         throw new Error('Rol de usuario no reconocido.');
       }
@@ -145,6 +153,10 @@ export default function Login() {
 
                 <option value="profesional">
                   Prestador de Servicio
+                </option>
+
+                <option value="dueno">
+                  Dueño de Empresa
                 </option>
 
                 <option value="admin">

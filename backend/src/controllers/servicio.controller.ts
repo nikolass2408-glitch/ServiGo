@@ -4,13 +4,14 @@ import { ServicioService } from "../services/servicio.service";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { ProfesionalRepository } from "../repositories/profesional.repository";
 import { ROLES } from "../data/roles";
+import { EmpresaService } from "../services/empresa.service";
 
 export class ServicioController {
   static async listar(req: Request, res: Response) {
     const { profesional } = req.query;
-    const servicios = profesional
-      ? await ServicioRepository.deProfesional(String(profesional))
-      : await ServicioRepository.listarTodos();
+    const servicios = await ServicioRepository.listarTodos(
+      profesional ? String(profesional) : undefined
+    );
     res.json(servicios.filter((servicio) => servicio.activo));
   }
   static async gestionar(req: AuthRequest, res: Response) {
@@ -22,9 +23,18 @@ export class ServicioController {
     }
     if (
       req.user?.rol !== ROLES.ADMIN &&
-      profesional.usuario.toString() !== req.user?.id
+      profesional.usuario.toString() !== req.user?.id &&
+      !(req.user?.rol === ROLES.DUENO && req.query.empresa &&
+        await EmpresaService.esMiembroActivo(String(req.user?.id), String(req.query.empresa), profesionalId))
     ) {
       res.status(403).json({ error: "No tienes permisos para gestionar estos servicios." });
+      return;
+    }
+    if (req.user?.rol === ROLES.DUENO) {
+      res.json(await ServicioRepository.deProfesionalEnEmpresa(
+        profesionalId,
+        String(req.query.empresa)
+      ));
       return;
     }
     res.json(await ServicioRepository.deProfesional(profesionalId));

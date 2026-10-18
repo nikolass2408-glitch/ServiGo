@@ -1,11 +1,10 @@
-import React from 'react';
 // 1. Importamos Link para la navegación interna sin recargar la página
 import { Link } from 'react-router-dom';
 import BrandMark from './BrandMark';
 
 export default function Navbar() {
   return (
-    <header style={styles.header}>
+    <header className="home-navbar" style={styles.header}>
       
       {/* LOGO (Nos lleva al inicio '/') */}
       <Link to="/" style={{ textDecoration: 'none' }}>
@@ -17,8 +16,11 @@ export default function Navbar() {
 
       {/* MENÚ DE NAVEGACIÓN */}
       <nav style={styles.navLinks}>
-        <a href="#quienes-somos" style={{ ...styles.link, ...styles.activeLink }}>
-          Quiénes somos
+        <a href="#servicios" style={{ ...styles.link, ...styles.activeLink }}>
+          Servicios
+        </a>
+        <a href="#profesionales" style={styles.link}>
+          Profesionales
         </a>
       </nav>
 

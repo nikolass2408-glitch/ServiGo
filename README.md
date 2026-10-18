@@ -70,6 +70,47 @@ npm run dev
 
 La API queda disponible en `http://localhost:3000/api/`. Al abrir esa dirección debe responder con el estado de la API. El servidor solo inicia después de conectarse a MongoDB.
 
+### Cargar el catálogo para pruebas y demostraciones
+
+El catálogo de pruebas crea o actualiza un cliente, cuatro perfiles de prestadores y 20 servicios activos (cinco por prestador). Los servicios quedan guardados en MongoDB, aparecen en **Servicios** para el cliente y en **Servicios** del espacio del prestador. La carga es idempotente: puede ejecutarse de nuevo sin duplicar los registros.
+
+En `backend/.env`, configura una contraseña de prueba de al menos 12 caracteres y autoriza explícitamente la carga:
+
+```env
+ALLOW_SERVIGO_TEST_SEED=true
+SERVIGO_TEST_ACCOUNT_PASSWORD=una_clave_segura_para_pruebas
+```
+
+Desde la carpeta `backend`, con MongoDB local/de pruebas configurado en `MONGO_URI`, ejecuta:
+
+```powershell
+npm run seed:test-catalog
+```
+
+El comando se bloquea si `NODE_ENV=production`. Para iniciar sesión, usa el correo indicado como usuario y la contraseña configurada arriba:
+
+- Cliente: `cliente.pruebas@servigo.test`
+- Prestadores: `barberia.pruebas@servigo.test`, `belleza.pruebas@servigo.test`, `gimnasio.pruebas@servigo.test` y `fotografia.pruebas@servigo.test`
+
+Al terminar las demostraciones, cambia `ALLOW_SERVIGO_TEST_SEED` a `false` o elimínalo y borra las cuentas de prueba desde una base de datos no productiva si ya no las necesitas. Nunca ejecutes esta carga contra la base de datos de producción.
+
+### Empresas, dueños e invitaciones profesionales
+
+En el registro selecciona **Soy dueño** para crear la cuenta dueña y la primera empresa. El rol de dueño administra sus propias empresas y no es el administrador global de ServiGo. Desde `/dueno` puede crear más empresas, invitar profesionales y registrar servicios para profesionales que hayan aceptado la invitación. Un dueño puede manejar varias empresas; un profesional puede aceptar invitaciones de varias empresas con la misma cuenta.
+
+Las invitaciones se envían por correo y vencen en 24 horas. Una cuenta profesional nueva define su contraseña al aceptar la invitación; un profesional que ya tiene cuenta acepta el vínculo y luego inicia sesión con sus credenciales existentes. Para habilitar este flujo, configura SMTP antes de invitar:
+
+```env
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=tu_correo
+MAIL_PASS=tu_clave_de_aplicacion
+MAIL_FROM=ServiGo <tu_correo>
+FRONTEND_URL=http://localhost:5173
+```
+
+No compartas ni subas credenciales SMTP. Si el envío falla, no se agrega el profesional a la empresa; configura el correo y vuelve a enviar la invitación.
+
 ### 3. Configurar e iniciar el frontend
 
 En otra terminal, desde la carpeta del proyecto:

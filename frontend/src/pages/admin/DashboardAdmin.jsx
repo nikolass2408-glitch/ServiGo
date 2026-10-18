@@ -113,7 +113,6 @@ export default function DashboardAdmin() {
         </div>
         <div style={styles.userMenu}>
           <span style={styles.userName}>{user?.firstName || 'Administración'}</span>
-          <NotificationBell userId={user?.id} />
           <button type="button" onClick={logout} style={styles.logout}><LogOut size={16} />Salir</button>
         </div>
       </header>
