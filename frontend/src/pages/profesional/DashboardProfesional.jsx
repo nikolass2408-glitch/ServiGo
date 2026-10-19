@@ -236,7 +236,7 @@ export default function DashboardProfesional() {
 
           <button type="button" onClick={logout} style={styles.btnLogout}>
             <LogOut size={16} />
-            Salir
+            Cerrar sesión
           </button>
 
         </div>

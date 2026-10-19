@@ -1,13 +1,15 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import dns from "node:dns";
 import mongoose from "mongoose";
+import { connectDatabase } from "../config/database";
+import { Horario } from "../models/Horario";
 import { Profesional } from "../models/Profesional";
 import { Servicio } from "../models/Servicio";
 import { Usuario } from "../models/Usuario";
 
 const testPassword = process.env.SERVIGO_TEST_ACCOUNT_PASSWORD;
 const MIN_TEST_SERVICES = 20;
+const DIAS_SEMANA = [0, 1, 2, 3, 4, 5, 6];
 
 const catalogos = [
   {
@@ -88,6 +90,16 @@ const catalogos = [
   },
 ];
 
+async function upsertHorarios(profesionalId: mongoose.Types.ObjectId) {
+  for (const dia of DIAS_SEMANA) {
+    await Horario.findOneAndUpdate(
+      { profesional: profesionalId, dia },
+      { $set: { profesional: profesionalId, dia, horaInicio: "09:00:00", horaFin: "17:00:00", activo: true } },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+  }
+}
+
 async function upsertUsuario(email: string, nombre: string, rol: "CLI" | "PRO", passwordHash: string) {
   const [firstName, ...lastName] = nombre.split(" ");
   return Usuario.findOneAndUpdate(
@@ -109,23 +121,44 @@ async function upsertUsuario(email: string, nombre: string, rol: "CLI" | "PRO", 
 }
 
 async function seed() {
+  const soloHorarios = process.argv.includes("--schedules-only");
   if (process.env.NODE_ENV === "production") {
     throw new Error("El catalogo de pruebas no se puede insertar en produccion.");
   }
   if (process.env.ALLOW_SERVIGO_TEST_SEED !== "true") {
     throw new Error("Define ALLOW_SERVIGO_TEST_SEED=true para autorizar esta carga.");
   }
-  if (!testPassword || testPassword.length < 12) {
+  if (!soloHorarios && (!testPassword || testPassword.length < 12)) {
     throw new Error("Define SERVIGO_TEST_ACCOUNT_PASSWORD con al menos 12 caracteres.");
   }
   if (!process.env.MONGO_URI) {
     throw new Error("Falta MONGO_URI en el entorno o en backend/.env.");
   }
-  const dnsServers = process.env.DNS_SERVERS?.split(",").map((server) => server.trim()).filter(Boolean);
-  if (dnsServers?.length) dns.setServers(dnsServers);
+  await connectDatabase();
+  if (soloHorarios) {
+    const users = await Usuario.find({ email: { $in: catalogos.map(({ email }) => email) } })
+      .select("_id email")
+      .lean();
+    if (users.length !== catalogos.length) {
+      throw new Error("Faltan cuentas del catalogo de pruebas; no se modificaron horarios.");
+    }
 
-  await mongoose.connect(process.env.MONGO_URI);
-  const passwordHash = await bcrypt.hash(testPassword, 12);
+    const profiles = await Profesional.find({
+      usuario: { $in: users.map(({ _id }) => _id) },
+      activo: true,
+    }).select("_id").lean();
+    if (profiles.length !== catalogos.length) {
+      throw new Error("Faltan perfiles profesionales activos; no se modificaron horarios.");
+    }
+
+    for (const profile of profiles) {
+      await upsertHorarios(profile._id);
+    }
+    console.log(JSON.stringify({ professionals: profiles.length, schedules: profiles.length * DIAS_SEMANA.length }));
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(testPassword!, 12);
   await upsertUsuario("cliente.pruebas@servigo.test", "Cliente Pruebas ServiGo", "CLI", passwordHash);
 
   const professionalIds = [];
@@ -137,6 +170,7 @@ async function seed() {
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
     professionalIds.push(profile._id);
+    await upsertHorarios(profile._id);
 
     for (const [nombre, descripcion, precio, duracion] of catalog.servicios) {
       await Servicio.findOneAndUpdate(
@@ -147,13 +181,25 @@ async function seed() {
     }
   }
 
-  const [serviceCount, professionalCount] = await Promise.all([
+  const [serviceCount, professionalCount, scheduleCount] = await Promise.all([
     Servicio.countDocuments({ profesional: { $in: professionalIds }, activo: true }),
     Profesional.countDocuments({ _id: { $in: professionalIds }, activo: true }),
+    Horario.countDocuments({
+      profesional: { $in: professionalIds },
+      activo: true,
+      horaInicio: "09:00:00",
+      horaFin: "17:00:00",
+      dia: { $in: DIAS_SEMANA },
+    }),
   ]);
   if (serviceCount < MIN_TEST_SERVICES) {
     throw new Error(
       `El catalogo quedo incompleto: se esperaban al menos ${MIN_TEST_SERVICES} servicios activos y se encontraron ${serviceCount}.`
+    );
+  }
+  if (scheduleCount < catalogos.length * DIAS_SEMANA.length) {
+    throw new Error(
+      `El catalogo quedo incompleto: se esperaban ${catalogos.length * DIAS_SEMANA.length} horarios activos y se encontraron ${scheduleCount}.`
     );
   }
 
@@ -162,6 +208,7 @@ async function seed() {
     testProfessionals: catalogos.map(({ email, perfil }) => ({ email, business: perfil.nombreNegocio })),
     services: serviceCount,
     professionals: professionalCount,
+    schedules: scheduleCount,
   }, null, 2));
 }
 

@@ -74,6 +74,16 @@ export class ReservaController {
     res.json(await ReservaService.historial(req.user));
   }
 
+  static async calificar(req: AuthRequest, res: Response) {
+    res.json(
+      await ReservaService.calificar(
+        String(req.params.id),
+        String(req.user?.id),
+        req.body?.calificacion,
+      )
+    );
+  }
+
   static async disponibilidad(req: AuthRequest, res: Response) {
     res.json(
       await ReservaService.disponibilidad(

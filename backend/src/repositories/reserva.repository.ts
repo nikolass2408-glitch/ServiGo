@@ -22,6 +22,21 @@ export class ReservaRepository {
       .populate("servicio")
       .populate("cliente", "-password");
   }
+  static buscarDeCliente(id: string, clienteId: string) {
+    return Reserva.findOne({ _id: id, cliente: clienteId });
+  }
+  static calificarCompletada(id: string, clienteId: string, calificacion: number) {
+    return Reserva.findOneAndUpdate(
+      {
+        _id: id,
+        cliente: clienteId,
+        estado: ESTADOS_RESERVA.COMPLETADA,
+        calificacion: { $exists: false },
+      },
+      { $set: { calificacion, calificadaEn: new Date() } },
+      { new: true, runValidators: true },
+    );
+  }
   static historialOrdenado() {
     return this.listarTodas();
   }

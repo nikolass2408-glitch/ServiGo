@@ -29,6 +29,12 @@ router.get(
   ReservaController.disponibilidad
 );
 
+router.patch(
+  "/reservas/:id/calificacion/",
+  authorizeRoles(ROLES.CLI),
+  ReservaController.calificar
+);
+
 router.get(
   "/reservas/:id/",
   ReservaController.detalle

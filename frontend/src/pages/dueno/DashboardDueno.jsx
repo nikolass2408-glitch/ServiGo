@@ -183,7 +183,7 @@ export default function DashboardDueno() {
               </select>
             </label>
           )}
-          <span>{nombreDueno}</span><button type="button" onClick={logout}><LogOut size={16} /> Salir</button>
+          <span>{nombreDueno}</span><button type="button" onClick={logout}><LogOut size={16} /> Cerrar sesión</button>
         </div>
       </header>
 

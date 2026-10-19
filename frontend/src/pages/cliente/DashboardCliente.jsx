@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import ModalAgendar from '../../components/ModalAgendar';
 import PanelProfesionalesReserva from '../../components/PanelProfesionalesReserva';
+import { RatingInput } from '../../components/RatingStars';
 import BrandMark from '../../components/BrandMark';
 import { bookingService } from '../../services/bookingService';
 import API from '../../services/api';
@@ -74,6 +75,7 @@ const normalizarReserva = (reserva) => {
     hora: reserva.hora,
     estado: estados[estadoCode] || estadoCode,
     estadoCode,
+    calificacion: Number(reserva.calificacion) || 0,
     precio: Number(servicio.precio ?? reserva.precio ?? 0),
     ubicacion: profesional.direccion || reserva.ubicacion || '',
     duracion: servicio.duracion
@@ -148,6 +150,9 @@ const activeSection = Object.keys(rutasCliente).find(
   const [accionEnCurso, setAccionEnCurso] = useState('');
   const [errorAccion, setErrorAccion] = useState('');
   const [mensajeAccion, setMensajeAccion] = useState('');
+  const [calificacionEnCurso, setCalificacionEnCurso] = useState('');
+  const [errorCalificacionId, setErrorCalificacionId] = useState('');
+  const [errorCalificacion, setErrorCalificacion] = useState('');
 
   const [mostrarReprogramacion, setMostrarReprogramacion] = useState(false);
   const [nuevaFecha, setNuevaFecha] = useState('');
@@ -231,6 +236,9 @@ const activeSection = Object.keys(rutasCliente).find(
           return {
             id: servicio._id || servicio.id,
             profesionalId,
+            profesionalNombre: [profesional?.usuario?.firstName, profesional?.usuario?.lastName]
+              .filter(Boolean)
+              .join(' ') || profesional?.nombreNegocio || 'Profesional ServiGo',
             nombre: servicio.nombre || 'Servicio sin nombre',
             empresa: servicio.empresa?.nombre || '',
             categoria:
@@ -244,6 +252,8 @@ const activeSection = Object.keys(rutasCliente).find(
             precio: Number(servicio.precio || 0),
             duracion: `${Number(servicio.duracion || 0)} min`,
             duracionMinutos: Number(servicio.duracion || 0),
+            calificacionPromedio: Number(profesional?.calificacionPromedio || 0),
+            totalCalificaciones: Number(profesional?.totalCalificaciones || 0),
             ubicacion: servicio.empresa?.direccion || profesional?.direccion || '',
             profesionalImagen: profesional?.imagen || '',
             profesionalDescripcion: profesional?.descripcion || '',
@@ -316,6 +326,29 @@ const activeSection = Object.keys(rutasCliente).find(
     setReservas((actuales) => [reservaPreparada, ...actuales]);
 
     return nuevaReserva;
+  };
+
+  const calificarReserva = async (reserva, calificacion) => {
+    setCalificacionEnCurso(reserva.id);
+    setErrorCalificacionId('');
+    setErrorCalificacion('');
+    try {
+      const resultado = await bookingService.calificarReserva(reserva.id, calificacion);
+      setReservas((actuales) => actuales.map((item) =>
+        item.id === reserva.id ? { ...item, calificacion: resultado.calificacion } : item
+      ));
+      setReservaSeleccionada((actual) => actual?.id === reserva.id
+        ? { ...actual, calificacion: resultado.calificacion }
+        : actual
+      );
+    } catch (error) {
+      setErrorCalificacionId(reserva.id);
+      setErrorCalificacion(
+        error.response?.data?.error || 'No se pudo guardar la calificación.'
+      );
+    } finally {
+      setCalificacionEnCurso('');
+    }
   };
 
   /* --------------------------------------------------
@@ -841,6 +874,22 @@ const activeSection = Object.keys(rutasCliente).find(
                           Ver detalles
                         </button>
                       </div>
+
+                      {item.estadoCode === 'COMPLETADA' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', marginTop: '12px' }}>
+                          <span style={{ color: '#625b68', fontSize: '12px', fontWeight: 700 }}>
+                            {item.calificacion ? 'Tu calificación' : 'Califica al profesional'}
+                          </span>
+                          <RatingInput
+                            value={item.calificacion}
+                            disabled={Boolean(item.calificacion) || calificacionEnCurso === item.id}
+                            onChange={(value) => calificarReserva(item, value)}
+                          />
+                          {errorCalificacion && errorCalificacionId === item.id && (
+                            <span role="alert" style={{ color: '#b91c1c', fontSize: '12px' }}>{errorCalificacion}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

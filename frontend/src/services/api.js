@@ -22,4 +22,19 @@ API.interceptors.request.use(
   }
 );
 
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isLoginRequest = error.config?.url?.endsWith('/login/');
+    if (error.response?.status === 401 && !isLoginRequest) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('servigo_user');
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login?session=expired');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default API;

@@ -446,6 +446,36 @@ export class ReservaService {
     return reserva;
   }
 
+  static async calificar(id: string, clienteId: string, valor: unknown) {
+    const calificacion = Number(valor);
+    if (!Number.isInteger(calificacion) || calificacion < 1 || calificacion > 5) {
+      throw Object.assign(new Error("La calificación debe ser un número entero entre 1 y 5."), {
+        statusCode: 400,
+      });
+    }
+
+    const reserva = await ReservaRepository.buscarDeCliente(id, clienteId);
+    if (!reserva) {
+      throw Object.assign(new Error("No se encontró una reserva tuya con ese identificador."), {
+        statusCode: 404,
+      });
+    }
+    if (reserva.estado !== ESTADOS_RESERVA.COMPLETADA) {
+      throw Object.assign(new Error("Solo puedes calificar una reserva completada."), {
+        statusCode: 400,
+      });
+    }
+    if (reserva.calificacion !== undefined) {
+      throw Object.assign(new Error("Esta reserva ya fue calificada."), { statusCode: 409 });
+    }
+
+    const actualizada = await ReservaRepository.calificarCompletada(id, clienteId, calificacion);
+    if (!actualizada) {
+      throw Object.assign(new Error("Esta reserva ya fue calificada."), { statusCode: 409 });
+    }
+    return { calificacion: actualizada.calificacion, calificadaEn: actualizada.calificadaEn };
+  }
+
   /**
    * Consulta las horas disponibles de un profesional para un día específico.
    */

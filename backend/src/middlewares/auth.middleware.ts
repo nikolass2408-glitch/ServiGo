@@ -25,7 +25,7 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     return res.status(401).json({ error: "Token inválido o expirado." });
   }
 
-  if (!payload?.id || !payload.rol) {
+  if (!payload?.id) {
     return res.status(401).json({ error: "Token inválido." });
   }
 
@@ -34,7 +34,11 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
     if (!usuario || !usuario.activo) {
       return res.status(401).json({ error: "La cuenta no existe o está desactivada." });
     }
-    req.user = payload;
+    req.user = {
+      id: usuario._id.toString(),
+      username: usuario.username,
+      rol: usuario.rol,
+    };
     next();
   } catch (error) {
     next(error);

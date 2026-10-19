@@ -24,7 +24,11 @@ export default function Login() {
 
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() =>
+    new URLSearchParams(location.search).get('session') === 'expired'
+      ? 'Tu sesión expiró. Inicia sesión nuevamente para continuar con la reserva.'
+      : ''
+  );
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (e) => {
