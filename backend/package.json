@@ -7,7 +7,7 @@
     "dev": "tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx --test src/services/reserva.rules.test.ts src/services/passwordReset.rules.test.ts src/services/password.rules.test.ts src/services/auth.roles.test.ts src/services/recordatorio.rules.test.ts src/utils/imageUpload.rules.test.ts",
+    "test": "tsx --test src/services/reserva.rules.test.ts src/services/passwordReset.rules.test.ts src/services/password.rules.test.ts src/services/auth.roles.test.ts src/services/recordatorio.rules.test.ts src/utils/imageUpload.rules.test.ts src/controllers/reserva.controller.test.ts src/routes/reserva.routes.test.ts",
     "seed:test-catalog": "tsx src/scripts/seedTestingCatalog.ts"
   },
   "dependencies": {
