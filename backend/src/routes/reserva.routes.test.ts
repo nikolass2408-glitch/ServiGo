@@ -25,7 +25,8 @@ async function iniciarServidor(): Promise<{ server: Server; baseUrl: string }> {
 }
 
 function tokenPara(rol: Role): string {
-  return jwt.sign({ id: "usuario-test", username: "test", rol }, testSecret);
+  const id = rol === ROLES.PRO ? "usuario-pro" : "usuario-cli";
+  return jwt.sign({ id, username: "test", rol }, testSecret);
 }
 
 async function cerrarServidor(server: Server): Promise<void> {
@@ -36,7 +37,12 @@ async function cerrarServidor(server: Server): Promise<void> {
 
 test.before(() => {
   process.env.JWT_SECRET = testSecret;
-  UsuarioRepository.buscarPorId = async () => ({ activo: true } as never);
+  UsuarioRepository.buscarPorId = async (id) => ({
+    _id: { toString: () => id },
+    username: "test",
+    rol: id === "usuario-pro" ? ROLES.PRO : ROLES.CLI,
+    activo: true,
+  } as never);
 });
 
 test.after(() => {
