@@ -6,14 +6,10 @@ import { ROLES } from "../data/roles";
 
 const router = Router();
 
-// Listar horarios
-router.get(
-  "/horarios/",
-  authenticateToken,
-  HorarioController.listar
-);
+// GET /horarios/ - Requiere estar autenticado
+router.get("/horarios/", authenticateToken, HorarioController.listar);
 
-// Crear horarios
+// POST /horarios/ - Permite profesionales y administradores
 router.post(
   "/horarios/",
   authenticateToken,
@@ -21,11 +17,11 @@ router.post(
   HorarioController.crear
 );
 
-// Modificar horarios
+// PATCH /horarios/:id/modificar/ - Permite a administradores
 router.patch(
   "/horarios/:id/modificar/",
   authenticateToken,
-  authorizeRoles(ROLES.PRO, ROLES.ADMIN),
+  authorizeRoles(ROLES.ADMIN),
   HorarioController.modificar
 );
 
