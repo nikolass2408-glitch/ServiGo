@@ -13,14 +13,14 @@ type MockResponse = {
   json: (value: unknown) => MockResponse;
 };
 
-// Guardamos los métodos originales para restaurarlos
+
 const serviceOriginal = {
   crear: ReservaService.crear,
   reprogramar: ReservaService.reprogramar,
   disponibilidad: ReservaService.disponibilidad,
 };
 
-// Simulamos la respuesta de Express
+
 function crearRespuesta(): MockResponse {
   const respuesta: MockResponse = {
     statusCode: undefined,
@@ -40,7 +40,7 @@ function crearRespuesta(): MockResponse {
   return respuesta;
 }
 
-// Restauramos los métodos después de cada prueba
+
 test.afterEach(() => {
   ReservaService.crear = serviceOriginal.crear;
   ReservaService.reprogramar = serviceOriginal.reprogramar;
