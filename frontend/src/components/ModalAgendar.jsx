@@ -232,7 +232,7 @@ export default function ModalAgendar({ servicio, onClose, onConfirmar }) {
                 disabled={cargando}
                 style={styles.btnSubmit}
               >
-                {cargando ? 'Enviando solicitud...' : 'Solicitar reserva'}
+                {cargando ? 'Enviando solicitud...' : 'Reservar cita'}
               </button>
 
             </form>

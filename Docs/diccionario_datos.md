@@ -51,6 +51,21 @@
 | `hora_fin` | String | Hora de finalización |
 | `activo` | Boolean | Indica si el horario está disponible |
 
+## Colección: empresas
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `horarioEmpresa.abierto24Horas` | Boolean | Indica si la empresa atiende las 24 horas todos los días |
+| `horarioEmpresa.dias` | Array | Horario de atención semanal de la empresa |
+| `horarioEmpresa.dias[].dia` | Number | Día de la semana (0 domingo, 1 lunes, …, 6 sábado) |
+| `horarioEmpresa.dias[].abierto` | Boolean | Indica si la empresa abre ese día |
+| `horarioEmpresa.dias[].horaInicio` | String | Hora de apertura en formato 24 horas |
+| `horarioEmpresa.dias[].horaFin` | String | Hora de cierre en formato 24 horas |
+
+El horario inicial es lunes a viernes de 08:00 a 22:00 y sábado y domingo de
+08:00 a 13:00. La disponibilidad reservable debe coincidir con el horario de
+atención de la empresa y con el horario individual del profesional.
+
 ## Colección: reservas
 
 | Campo | Tipo | Descripción |

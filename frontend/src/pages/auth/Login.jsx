@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Lock,
   UserCheck,
@@ -10,21 +10,25 @@ import {
 
 import { useAuth } from '../../context/AuthContext';
 import BrandMark from '../../components/BrandMark';
-import { demoCredentials } from '../../services/demoApi';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { login, logout } = useAuth();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const [rol, setRol] = useState('cliente');
+  const [rol, setRol] = useState(location.state?.rol || 'cliente');
 
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() =>
+    new URLSearchParams(location.search).get('session') === 'expired'
+      ? 'Tu sesión expiró. Inicia sesión nuevamente para continuar con la reserva.'
+      : ''
+  );
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -56,6 +60,11 @@ export default function Login() {
         );
       }
 
+      if (rol === 'dueno' && usuario.rol !== 'dueno') {
+        logout();
+        throw new Error('La cuenta ingresada no corresponde al dueño de una empresa.');
+      }
+
       if (rol === 'admin' && usuario.rol !== 'admin') {
         logout();
         throw new Error(
@@ -65,11 +74,13 @@ export default function Login() {
 
       // REDIRECCIÓN
       if (usuario.rol === 'cliente') {
-        navigate('/cliente');
+        navigate('/cliente/servicios');
       } else if (usuario.rol === 'profesional') {
         navigate('/profesional');
       } else if (usuario.rol === 'admin') {
         navigate('/admin');
+      } else if (usuario.rol === 'dueno') {
+        navigate('/dueno');
       } else {
         throw new Error('Rol de usuario no reconocido.');
       }
@@ -148,6 +159,10 @@ export default function Login() {
                   Prestador de Servicio
                 </option>
 
+                <option value="dueno">
+                  Dueño de Empresa
+                </option>
+
                 <option value="admin">
                   Administrador
                 </option>
@@ -185,22 +200,6 @@ export default function Login() {
 
             </div>
 
-          </div>
-
-          <div style={styles.demoAccess}>
-            <span>Cuenta de demostración: {demoCredentials[rol].email}</span>
-            <span>Contraseña: {demoCredentials[rol].password}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername(demoCredentials[rol].email);
-                setPassword(demoCredentials[rol].password);
-              }}
-              style={styles.demoButton}
-            >
-              Usar cuenta demo
-            </button>
-            <small>Los datos de esta demo se guardan solo en este navegador.</small>
           </div>
 
           {/* CONTRASEÑA */}
@@ -446,30 +445,6 @@ const styles = {
     display: 'flex',
     justifyContent: 'flex-end',
     marginTop: '-10px'
-  },
-
-  demoAccess: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px',
-    marginTop: '-10px',
-    padding: '11px',
-    borderRadius: '9px',
-    backgroundColor: '#faf5ff',
-    color: '#581c87',
-    fontSize: '12px'
-  },
-
-  demoButton: {
-    alignSelf: 'flex-start',
-    padding: '5px 8px',
-    border: '1px solid #e9d5ff',
-    borderRadius: '6px',
-    backgroundColor: '#ffffff',
-    color: '#6b21a8',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer'
   },
 
   submitBtn: {

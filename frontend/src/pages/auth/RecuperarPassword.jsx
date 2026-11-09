@@ -12,7 +12,7 @@ export default function RecuperarPassword() {
   const [confirmarPassword, setConfirmarPassword] = useState('');
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const [enlaceDemo, setEnlaceDemo] = useState('');
+  const [enlaceRecuperacion, setEnlaceRecuperacion] = useState('');
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -38,7 +38,7 @@ export default function RecuperarPassword() {
           email: email.trim().toLowerCase()
         });
         setMensaje(response.data.message);
-        setEnlaceDemo(response.data.resetUrl || '');
+        setEnlaceRecuperacion(response.data.resetUrl || '');
       }
     } catch (requestError) {
       setError(
@@ -67,7 +67,7 @@ export default function RecuperarPassword() {
           <div role="status" style={styles.success}>
             <CheckCircle size={22} />
             <p>{mensaje}</p>
-            {enlaceDemo && <a href={enlaceDemo} style={styles.link}>Abrir enlace de demostración</a>}
+            {enlaceRecuperacion && <a href={enlaceRecuperacion} style={styles.link}>Abrir enlace de recuperación</a>}
             <Link to="/login" style={styles.link}>Volver a iniciar sesión</Link>
           </div>
         ) : (

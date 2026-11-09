@@ -4,21 +4,19 @@ import jwt from "jsonwebtoken";
 import { UsuarioRepository } from "../repositories/usuario.repository";
 import { ROLES, Role } from "../data/roles";
 import { MailService } from "./mail.service";
+import { EmpresaService } from "./empresa.service";
+import { validarPassword } from "./password.rules";
 
 export class AuthService {
   static validarPassword(password: string) {
-    if (typeof password !== "string" || password.length < 8) {
-      throw Object.assign(new Error("La contraseña debe tener mínimo 8 caracteres."), { statusCode: 400 });
-    }
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
-      throw Object.assign(new Error("La contraseña debe incluir mayúscula, minúscula y número."), { statusCode: 400 });
-    }
+    validarPassword(password);
   }
 
   // Traduce lo que manda el frontend ("profesional", "PRO", etc.) al rol del sistema.
   // Nunca permite crear un ADMIN desde el registro público.
   static normalizarRol(rol: any): Role {
     const r = String(rol || "").trim().toUpperCase();
+    if (["DUENO", "DUEÑO", "OWNER"].includes(r)) return ROLES.DUENO;
     if (["PRO", "PROF", "PROFESIONAL", "PRESTADOR"].includes(r)) return ROLES.PRO;
     return ROLES.CLI;
   }
@@ -49,6 +47,15 @@ export class AuthService {
       rol,
       telefono: data.telefono || ""
     });
+
+    if (rol === ROLES.DUENO) {
+      try {
+        await EmpresaService.crearParaDueno(usuario._id.toString(), data.empresa);
+      } catch (error) {
+        await usuario.deleteOne();
+        throw error;
+      }
+    }
 
     return this.publicUser(usuario);
   }

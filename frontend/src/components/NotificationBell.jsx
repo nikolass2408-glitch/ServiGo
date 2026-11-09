@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import API from '../services/api';
 
-export default function NotificationBell({ userId }) {
+export default function NotificationBell({ userId, onNotificationClick }) {
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
@@ -33,6 +33,19 @@ export default function NotificationBell({ userId }) {
     };
   }, [userId]);
 
+  const abrirNotificacion = async (notification) => {
+    setOpen(false);
+    if (!onNotificationClick) return;
+
+    try {
+      await onNotificationClick(notification);
+      setError('');
+    } catch (requestError) {
+      setError(requestError.message || 'No se pudo abrir la reserva de esta notificación.');
+      setOpen(true);
+    }
+  };
+
   return (
     <div style={styles.container}>
       <button
@@ -62,14 +75,19 @@ export default function NotificationBell({ userId }) {
               {notifications.slice(0, 8).map((notification) => (
                 <li key={notification.id || notification._id} style={styles.item}>
                   <span style={styles.dot} />
-                  <div>
-                    <p style={styles.message}>{notification.mensaje}</p>
+                  <button
+                    type="button"
+                    style={styles.notification}
+                    onClick={() => abrirNotificacion(notification)}
+                    aria-label={`Abrir reserva relacionada: ${notification.mensaje}`}
+                  >
+                    <span style={styles.message}>{notification.mensaje}</span>
                     {notification.creadaEn && (
                       <time style={styles.date} dateTime={notification.creadaEn}>
                         {new Date(notification.creadaEn).toLocaleString()}
                       </time>
                     )}
-                  </div>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -88,6 +106,7 @@ const styles = {
   title: { margin: '0 0 12px', fontSize: '15px' },
   list: { display: 'flex', flexDirection: 'column', gap: '8px', margin: 0, padding: 0, listStyle: 'none' },
   item: { display: 'flex', gap: '9px', padding: '10px', borderRadius: '8px', background: '#faf5ff' },
+  notification: { display: 'block', flex: 1, padding: 0, border: 0, background: 'transparent', color: 'inherit', textAlign: 'left', cursor: 'pointer' },
   dot: { flex: '0 0 8px', width: '8px', height: '8px', marginTop: '5px', borderRadius: '50%', background: '#7c3aed' },
   message: { margin: 0, fontSize: '13px', lineHeight: 1.4 },
   date: { display: 'block', marginTop: '5px', color: '#6b7280', fontSize: '11px' },

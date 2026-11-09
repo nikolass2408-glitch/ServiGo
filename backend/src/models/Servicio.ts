@@ -2,6 +2,7 @@ import { Schema, model, Document, Types } from "mongoose";
 
 export interface IServicio extends Document {
   profesional: Types.ObjectId;
+  empresa?: Types.ObjectId;
   nombre: string;
   descripcion?: string;
   precio: number;
@@ -12,6 +13,7 @@ export interface IServicio extends Document {
 const servicioSchema = new Schema<IServicio>(
   {
     profesional: { type: Schema.Types.ObjectId, ref: "Profesional", required: true },
+    empresa: { type: Schema.Types.ObjectId, ref: "Empresa", default: null, index: true },
     nombre: { type: String, required: true, trim: true },
     descripcion: { type: String, default: "" },
     precio: { type: Number, required: true, min: 0 },

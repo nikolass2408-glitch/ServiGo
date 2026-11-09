@@ -15,9 +15,11 @@ import {
 
 import API from '../../services/api';
 import BrandMark from '../../components/BrandMark';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Registro() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [tipoCuenta, setTipoCuenta] = useState('cliente');
 
@@ -25,6 +27,13 @@ export default function Registro() {
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [password, setPassword] = useState('');
+  const [empresa, setEmpresa] = useState({
+    nombre: '',
+    tipoNegocio: 'OTRO',
+    telefono: '',
+    direccion: '',
+    descripcion: ''
+  });
 
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
@@ -66,11 +75,18 @@ export default function Registro() {
         email: correo,
         telefono,
         password,
-        rol: tipoCuenta // 'cliente' o 'profesional'
+        rol: tipoCuenta,
+        ...(tipoCuenta === 'dueno' ? { empresa } : {})
       });
 
-      alert('¡Registro exitoso!');
-      navigate('/login');
+      const usuario = await login(correo, password);
+      navigate(
+        usuario.rol === 'cliente'
+          ? '/cliente/servicios'
+          : usuario.rol === 'dueno'
+            ? '/dueno'
+            : '/profesional'
+      );
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -135,6 +151,18 @@ export default function Registro() {
             Soy Profesional
           </button>
 
+          <button
+            type="button"
+            onClick={() => setTipoCuenta('dueno')}
+            style={{
+              ...styles.roleBtn,
+              ...(tipoCuenta === 'dueno' ? styles.roleBtnActive : {})
+            }}
+          >
+            <Briefcase size={16} />
+            Soy dueño
+          </button>
+
         </div>
 
         <form
@@ -165,6 +193,67 @@ export default function Registro() {
             </div>
 
           </div>
+
+          {tipoCuenta === 'dueno' && (
+            <div style={styles.companyFields}>
+              <h3 style={styles.companyTitle}>Datos de la empresa</h3>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Nombre de la empresa</label>
+                <input
+                  value={empresa.nombre}
+                  onChange={(event) => setEmpresa({ ...empresa, nombre: event.target.value })}
+                  style={styles.companyInput}
+                  required
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Tipo de negocio</label>
+                <select
+                  value={empresa.tipoNegocio}
+                  onChange={(event) => setEmpresa({ ...empresa, tipoNegocio: event.target.value })}
+                  style={styles.companyInput}
+                >
+                  <option value="BARBERIA">Barbería</option>
+                  <option value="RESTAURANTE">Restaurante</option>
+                  <option value="SPA">Spa</option>
+                  <option value="GIMNASIO">Gimnasio</option>
+                  <option value="FOTOGRAFIA">Fotografía</option>
+                  <option value="EDUCACION">Educación</option>
+                  <option value="MASCOTAS">Mascotas</option>
+                  <option value="SALUD">Salud</option>
+                  <option value="AUTOMOTRIZ">Automotriz</option>
+                  <option value="OTRO">Otros</option>
+                </select>
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Dirección</label>
+                <input
+                  value={empresa.direccion}
+                  onChange={(event) => setEmpresa({ ...empresa, direccion: event.target.value })}
+                  style={styles.companyInput}
+                  required
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Teléfono de la empresa</label>
+                <input
+                  type="tel"
+                  value={empresa.telefono}
+                  onChange={(event) => setEmpresa({ ...empresa, telefono: event.target.value })}
+                  style={styles.companyInput}
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Descripción (opcional)</label>
+                <textarea
+                  value={empresa.descripcion}
+                  onChange={(event) => setEmpresa({ ...empresa, descripcion: event.target.value })}
+                  style={styles.companyInput}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
 
           {/* CORREO */}
           <div style={styles.inputGroup}>
@@ -319,8 +408,10 @@ export default function Registro() {
               : `Registrarme como ${
                   tipoCuenta === 'cliente'
                     ? 'Cliente'
+                  : tipoCuenta === 'dueno'
+                    ? 'Dueño de empresa'
                     : 'Profesional'
-                }`}
+              }`}
           </button>
 
         </form>
@@ -365,7 +456,7 @@ const styles = {
     borderRadius: '16px',
     padding: '32px',
     width: '100%',
-    maxWidth: '420px',
+    maxWidth: '560px',
     boxShadow: '0 10px 25px rgba(107, 33, 168, 0.10)',
     border: '1px solid #f3e8ff'
   },
@@ -399,6 +490,7 @@ const styles = {
 
   roleSelector: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '8px',
     backgroundColor: '#f3f4f6',
     padding: '4px',
@@ -408,6 +500,7 @@ const styles = {
 
   roleBtn: {
     flex: 1,
+    minWidth: '120px',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -419,6 +512,31 @@ const styles = {
     color: '#6b7280',
     fontWeight: '600',
     cursor: 'pointer'
+  },
+
+  companyFields: {
+    display: 'grid',
+    gap: '12px',
+    padding: '16px',
+    border: '1px solid #e9d5ff',
+    borderRadius: '12px',
+    backgroundColor: '#faf5ff'
+  },
+
+  companyTitle: {
+    margin: 0,
+    color: '#581c87',
+    fontSize: '15px'
+  },
+
+  companyInput: {
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '9px',
+    backgroundColor: '#fff',
+    font: 'inherit'
   },
 
   roleBtnActive: {
