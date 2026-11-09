@@ -8,6 +8,7 @@ import { Usuario } from "../models/Usuario";
 import { ROLES } from "../data/roles";
 import { MailService } from "./mail.service";
 import { validarPassword } from "./password.rules";
+import { HORARIO_EMPRESA_EJEMPLO, validarHorarioEmpresa } from "./empresa.horario";
 
 const errorConEstado = (mensaje: string, statusCode: number) =>
   Object.assign(new Error(mensaje), { statusCode });
@@ -28,11 +29,23 @@ export class EmpresaService {
       descripcion: String(datos.descripcion || "").trim(),
       telefono: String(datos.telefono || "").trim(),
       direccion: String(datos.direccion || "").trim(),
+      horarioEmpresa: HORARIO_EMPRESA_EJEMPLO,
     });
   }
 
   static async crearEmpresa(duenoId: string, datos: any) {
     return this.crearParaDueno(duenoId, datos);
+  }
+
+  static async actualizarHorarioEmpresa(duenoId: string, empresaId: string, datos: unknown) {
+    const horarioEmpresa = validarHorarioEmpresa(datos);
+    const empresa = await Empresa.findOneAndUpdate(
+      { _id: empresaId, dueno: duenoId, activo: true },
+      { $set: { horarioEmpresa } },
+      { new: true, runValidators: true }
+    );
+    if (!empresa) throw errorConEstado("No se encontró esta empresa en tu cuenta.", 404);
+    return empresa;
   }
 
   static async obtenerPanel(duenoId: string) {

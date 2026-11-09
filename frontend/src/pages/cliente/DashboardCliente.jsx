@@ -17,7 +17,8 @@ import {
   BriefcaseBusiness,
   History,
   CalendarCheck,
-  ChevronRight
+  ChevronRight,
+  Filter
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -25,9 +26,11 @@ import ModalAgendar from '../../components/ModalAgendar';
 import PanelProfesionalesReserva from '../../components/PanelProfesionalesReserva';
 import { RatingInput } from '../../components/RatingStars';
 import BrandMark from '../../components/BrandMark';
+import NotificationBell from '../../components/NotificationBell';
 import { bookingService } from '../../services/bookingService';
 import API from '../../services/api';
 import PerfilPanel from '../../components/PerfilPanel';
+import { obtenerNombreNegocio } from '../../utils/nombreNegocio';
 import './DashboardCliente.css';
 
 /* --------------------------------------------------
@@ -45,6 +48,17 @@ const normalizarReserva = (reserva) => {
     reserva.profesional !== null
       ? reserva.profesional
       : {};
+  const empresa =
+    typeof servicio.empresa === 'object' && servicio.empresa !== null
+      ? servicio.empresa.nombre
+      : typeof servicio.empresa === 'string'
+        ? servicio.empresa
+        : reserva.empresaNombre || '';
+  const nombreNegocio = obtenerNombreNegocio({
+    nombreEmpresa: empresa,
+    nombreNegocio: profesional.nombreNegocio || reserva.profesionalNombre,
+    tipoNegocio: profesional.tipoNegocio
+  });
 
   const estadoCode = String(reserva.estado || 'PENDIENTE').toUpperCase();
 
@@ -65,12 +79,12 @@ const normalizarReserva = (reserva) => {
       (typeof reserva.servicio === 'string' ? reserva.servicio : '') ||
       'Servicio',
     profesional:
-      profesional.nombreNegocio ||
-      reserva.profesionalNombre ||
+      nombreNegocio ||
       (typeof reserva.profesional === 'string'
         ? reserva.profesional
         : '') ||
       'Profesional',
+    empresa: nombreNegocio,
     fecha: reserva.fecha,
     hora: reserva.hora,
     estado: estados[estadoCode] || estadoCode,
@@ -96,6 +110,42 @@ const normalizarReserva = (reserva) => {
     AUTOMOTRIZ: 'Automotriz',
     OTRO: 'Otros'
   };
+
+const profesionalesDemoBarberia = {
+  'corte clasico': { nombre: 'Tomás Herrera', especialidad: 'Barbero clásico', calificacion: 4.9, total: 38 },
+  'corte degradado': { nombre: 'Emilio Vargas', especialidad: 'Especialista en degradados', calificacion: 4.8, total: 31 },
+  'corte y barba': { nombre: 'Julián Pardo', especialidad: 'Barbero y cuidado de barba', calificacion: 4.7, total: 24 },
+  'perfilado de barba': { nombre: 'Esteban Ríos', especialidad: 'Diseño y perfilado de barba', calificacion: 4.9, total: 42 },
+  'afeitado tradicional': { nombre: 'Gabriel Muñoz', especialidad: 'Afeitado clásico', calificacion: 4.6, total: 19 }
+};
+
+const nombresCanonicosServiciosDemo = {
+  'corte clasico': 'Corte clásico',
+  'corte degradado': 'Corte degradado',
+  'corte y barba': 'Corte y barba',
+  'perfilado de barba': 'Perfilado de barba',
+  'afeitado tradicional': 'Afeitado tradicional'
+};
+
+const corregirNombreServicioDemo = (nombre) => {
+  const normalizado = String(nombre || '')
+    .replace(/\uFFFD/g, 'a')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+  const servicioBarberia = Object.keys(profesionalesDemoBarberia).find((servicio) =>
+    normalizado === servicio || (servicio === 'corte clasico' && /^corte cl.?sico$/.test(normalizado))
+  );
+  if (servicioBarberia) {
+    return {
+      nombre: nombresCanonicosServiciosDemo[servicioBarberia],
+      profesional: profesionalesDemoBarberia[servicioBarberia]
+    };
+  }
+  return { nombre, profesional: null };
+};
 
 /* --------------------------------------------------
    DASHBOARD DEL CLIENTE
@@ -132,6 +182,8 @@ const activeSection = Object.keys(rutasCliente).find(
 
   const [busquedaServicio, setBusquedaServicio] = useState('');
   const [busquedaUbicacion, setBusquedaUbicacion] = useState('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+  const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
   const [reservas, setReservas] = useState([]);
   const [cargandoReservas, setCargandoReservas] = useState(true);
@@ -170,12 +222,19 @@ const activeSection = Object.keys(rutasCliente).find(
         .toLowerCase();
 
     const ubicacion = String(servicio.ubicacion || '').toLowerCase();
+    const categoria = String(servicio.categoria || '').toLowerCase();
 
     return (
       textoServicio.includes(busquedaServicio.trim().toLowerCase()) &&
-      ubicacion.includes(busquedaUbicacion.trim().toLowerCase())
+      ubicacion.includes(busquedaUbicacion.trim().toLowerCase()) &&
+      (!categoriaSeleccionada ||
+        categoria === categoriaSeleccionada.toLowerCase())
     );
   });
+
+  const categoriasDisponibles = [...new Set(
+    servicios.map((servicio) => servicio.categoria).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, 'es'));
 
   /* --------------------------------------------------
      SEPARAR RESERVAS ACTIVAS E HISTORIAL
@@ -222,42 +281,72 @@ const activeSection = Object.keys(rutasCliente).find(
           : [];
 
         const serviciosPreparados = listaServicios.map((servicio) => {
+          const servicioDemo = corregirNombreServicioDemo(servicio.nombre);
+          const profesionalDelServicio =
+            typeof servicio.profesional === 'object' && servicio.profesional !== null
+              ? servicio.profesional
+              : null;
           const profesionalId =
-            typeof servicio.profesional === 'object' &&
-            servicio.profesional !== null
-              ? servicio.profesional._id || servicio.profesional.id
+            profesionalDelServicio
+              ? profesionalDelServicio._id || profesionalDelServicio.id
               : servicio.profesional;
 
-          const profesional = profesionales.find(
+          const profesional = profesionalDelServicio || profesionales.find(
             (item) =>
               String(item._id || item.id) === String(profesionalId)
           );
+          const esProfesionalDemo =
+            String(profesional?.usuario?.email || '').endsWith('@servigo.test') ||
+            /prestador pruebas barberia|barberia pruebas/i.test(
+              `${profesional?.usuario?.firstName || ''} ${profesional?.usuario?.lastName || ''} ${profesional?.nombreNegocio || ''}`
+            );
+          const datosDemoBarberia =
+            esProfesionalDemo && profesional?.tipoNegocio === 'BARBERIA'
+              ? servicioDemo.profesional
+              : null;
+          const nombreProfesional = datosDemoBarberia?.nombre || [
+            profesional?.usuario?.firstName || profesional?.usuario?.nombre,
+            profesional?.usuario?.lastName || profesional?.usuario?.apellido
+          ].filter(Boolean).join(' ').trim();
 
           return {
             id: servicio._id || servicio.id,
             profesionalId,
-            profesionalNombre: [profesional?.usuario?.firstName, profesional?.usuario?.lastName]
-              .filter(Boolean)
-              .join(' ') || profesional?.nombreNegocio || 'Profesional ServiGo',
-            nombre: servicio.nombre || 'Servicio sin nombre',
-            empresa: servicio.empresa?.nombre || '',
+            esProfesionalDemo,
+            profesionalNombre: nombreProfesional || 'Profesional',
+            especialidad: datosDemoBarberia?.especialidad || profesional?.especialidad || '',
+            calificacionPromedio: Number(datosDemoBarberia?.calificacion || profesional?.calificacionPromedio || 0),
+            totalCalificaciones: Number(datosDemoBarberia?.total || profesional?.totalCalificaciones || 0),
+            nombre: servicioDemo.nombre || 'Servicio sin nombre',
+            empresa: obtenerNombreNegocio({
+              nombreEmpresa: servicio.empresa?.nombre,
+              nombreNegocio: profesional?.nombreNegocio,
+              tipoNegocio: profesional?.tipoNegocio
+            }),
             categoria:
               servicio.categoria ||
               nombresCategoria[servicio.empresa?.tipoNegocio] ||
               nombresCategoria[profesional?.tipoNegocio] ||
               'Servicios',
-            profesional: servicio.empresa?.nombre
-              ? `${[profesional?.usuario?.firstName, profesional?.usuario?.lastName].filter(Boolean).join(' ') || 'Profesional'} · ${servicio.empresa.nombre}`
-              : profesional?.nombreNegocio || 'Profesional ServiGo',
+            profesionalTipo:
+              profesional?.especialidad ||
+              nombresCategoria[profesional?.tipoNegocio] ||
+              'Profesional',
+            profesional: obtenerNombreNegocio({
+              nombreEmpresa: servicio.empresa?.nombre,
+              nombreNegocio: profesional?.nombreNegocio,
+              tipoNegocio: profesional?.tipoNegocio
+            }) ||
+              [profesional?.usuario?.firstName, profesional?.usuario?.lastName]
+                .filter(Boolean)
+                .join(' ') ||
+              'Profesional ServiGo',
             precio: Number(servicio.precio || 0),
             duracion: `${Number(servicio.duracion || 0)} min`,
             duracionMinutos: Number(servicio.duracion || 0),
-            calificacionPromedio: Number(profesional?.calificacionPromedio || 0),
-            totalCalificaciones: Number(profesional?.totalCalificaciones || 0),
             ubicacion: servicio.empresa?.direccion || profesional?.direccion || '',
             profesionalImagen: profesional?.imagen || '',
             profesionalDescripcion: profesional?.descripcion || '',
-            profesionalTipo: profesional?.tipoNegocio || '',
             enlacePersonalizado: profesional?.enlacePersonalizado || '',
             descripcion: servicio.descripcion || ''
           };
@@ -529,14 +618,19 @@ const activeSection = Object.keys(rutasCliente).find(
             </div>
           </div>
 
-          <button
-            onClick={logout}
-            style={styles.btnLogout}
-            type="button"
-          >
-            <LogOut size={16} />
-            <span>Salir</span>
-          </button>
+          <NotificationBell
+            userId={user?.id || user?._id}
+            onNotificationClick={(notification) => {
+              const reservaId = String(notification.reserva?._id || notification.reserva || '');
+              const reserva = reservas.find((item) => String(item.id) === reservaId);
+              if (!reserva) {
+                throw new Error('No se encontró la reserva asociada a esta notificación.');
+              }
+              cambiarSeccion('reservas');
+              abrirReserva(reserva);
+            }}
+          />
+
         </div>
       </header>
 
@@ -655,6 +749,15 @@ const activeSection = Object.keys(rutasCliente).find(
             <span>ServiGo</span>
             <span style={styles.sidebarVersion}>Cliente</span>
           </div>
+
+          <button
+            onClick={logout}
+            style={styles.sidebarLogout}
+            type="button"
+          >
+            <LogOut size={16} />
+            <span>Salir</span>
+          </button>
         </aside>
 
         {/* CONTENIDO PRINCIPAL */}
@@ -843,9 +946,9 @@ const activeSection = Object.keys(rutasCliente).find(
                         </span>
                       </div>
 
-                      <p style={styles.providerName}>
-                        <User size={14} />
-                        {item.profesional}
+                      <p style={styles.reservationBusinessName}>
+                        <BriefcaseBusiness size={14} />
+                        {item.empresa || item.profesional}
                       </p>
 
                       <div style={styles.reservaDetails}>
@@ -952,20 +1055,6 @@ const activeSection = Object.keys(rutasCliente).find(
 
               <div style={styles.searchPanel}>
                 <div style={styles.searchField}>
-                  <Search size={18} color="#9ca3af" />
-
-                  <input
-                    aria-label="Buscar por servicio"
-                    placeholder="Nombre o categoría"
-                    value={busquedaServicio}
-                    onChange={(event) =>
-                      setBusquedaServicio(event.target.value)
-                    }
-                    style={styles.searchInput}
-                  />
-                </div>
-
-                <div style={styles.searchField}>
                   <MapPin size={18} color="#9ca3af" />
 
                   <input
@@ -974,6 +1063,68 @@ const activeSection = Object.keys(rutasCliente).find(
                     value={busquedaUbicacion}
                     onChange={(event) =>
                       setBusquedaUbicacion(event.target.value)
+                    }
+                    style={styles.searchInput}
+                  />
+                </div>
+
+                <div style={styles.categoryFilter}>
+                  <button
+                    type="button"
+                    style={styles.categoryFilterButton}
+                    aria-expanded={mostrarCategorias}
+                    aria-haspopup="true"
+                    onClick={() => setMostrarCategorias((visible) => !visible)}
+                  >
+                    <Filter size={17} />
+                    <span>
+                      {categoriaSeleccionada || 'Filtrar por categoría'}
+                    </span>
+                  </button>
+
+                  {mostrarCategorias && (
+                    <div style={styles.categoryFilterMenu}>
+                      <button
+                        type="button"
+                        style={styles.categoryFilterOption}
+                        onClick={() => {
+                          setCategoriaSeleccionada('');
+                          setMostrarCategorias(false);
+                        }}
+                      >
+                        Todas las categorías
+                      </button>
+                      {categoriasDisponibles.map((categoria) => (
+                        <button
+                          key={categoria}
+                          type="button"
+                          style={{
+                            ...styles.categoryFilterOption,
+                            ...(categoriaSeleccionada === categoria
+                              ? styles.categoryFilterOptionActive
+                              : {})
+                          }}
+                          onClick={() => {
+                            setCategoriaSeleccionada(categoria);
+                            setMostrarCategorias(false);
+                          }}
+                        >
+                          {categoria}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.searchField}>
+                  <Search size={18} color="#9ca3af" />
+
+                  <input
+                    aria-label="Buscar por nombre de servicio"
+                    placeholder="Nombre del servicio"
+                    value={busquedaServicio}
+                    onChange={(event) =>
+                      setBusquedaServicio(event.target.value)
                     }
                     style={styles.searchInput}
                   />
@@ -988,13 +1139,14 @@ const activeSection = Object.keys(rutasCliente).find(
                     : 'servicios encontrados'}
                 </span>
 
-                {(busquedaServicio || busquedaUbicacion) && (
+                {(busquedaServicio || busquedaUbicacion || categoriaSeleccionada) && (
                   <button
                     type="button"
                     style={styles.clearFilters}
                     onClick={() => {
                       setBusquedaServicio('');
                       setBusquedaUbicacion('');
+                      setCategoriaSeleccionada('');
                     }}
                   >
                     Limpiar filtros
@@ -1170,9 +1322,9 @@ const activeSection = Object.keys(rutasCliente).find(
                         </span>
                       </div>
 
-                      <p style={styles.providerName}>
-                        <User size={14} />
-                        {item.profesional}
+                      <p style={styles.reservationBusinessName}>
+                        <BriefcaseBusiness size={14} />
+                        {item.empresa || item.profesional}
                       </p>
 
                       <div style={styles.reservaDetails}>
@@ -1267,9 +1419,9 @@ const activeSection = Object.keys(rutasCliente).find(
                         </span>
                       </div>
 
-                      <p style={styles.providerName}>
-                        <User size={14} />
-                        {item.profesional}
+                      <p style={styles.reservationBusinessName}>
+                        <BriefcaseBusiness size={14} />
+                        {item.empresa || item.profesional}
                       </p>
 
                       <div style={styles.reservaDetails}>
@@ -1364,9 +1516,9 @@ const activeSection = Object.keys(rutasCliente).find(
               </div>
 
               <div style={styles.infoBlock}>
-                <span style={styles.infoLabel}>Profesional</span>
+                <span style={styles.infoLabel}>Empresa / negocio</span>
                 <span style={styles.infoValue}>
-                  {reservaSeleccionada.profesional}
+                  {reservaSeleccionada.empresa || reservaSeleccionada.profesional}
                 </span>
               </div>
 
@@ -1647,7 +1799,7 @@ const activeSection = Object.keys(rutasCliente).find(
               </p>
 
               <div style={styles.infoBlock}>
-                <span style={styles.infoLabel}>Profesional</span>
+                <span style={styles.infoLabel}>Empresa / negocio</span>
 
                 <span style={styles.infoValue}>
                   {servicioVisto.profesional}
@@ -1859,21 +2011,6 @@ const styles = {
     color: '#9ca3af'
   },
 
-  btnLogout: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '7px',
-    color: '#6b7280',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '9px',
-    padding: '9px 12px',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer'
-  },
-
   layout: {
     display: 'grid',
     gridTemplateColumns: '245px minmax(0, 1fr)',
@@ -2015,6 +2152,23 @@ const styles = {
     color: '#9ca3af',
     fontSize: '10px',
     fontWeight: '600'
+  },
+
+  sidebarLogout: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: '9px',
+    marginTop: '12px',
+    padding: '11px 12px',
+    border: '1px solid #fee2e2',
+    borderRadius: '9px',
+    backgroundColor: '#fff',
+    color: '#b91c1c',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer'
   },
 
   content: {
@@ -2284,6 +2438,62 @@ const styles = {
     color: '#1f2937'
   },
 
+  categoryFilter: {
+    position: 'relative',
+    minWidth: 0
+  },
+
+  categoryFilterButton: {
+    width: '100%',
+    minHeight: '44px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0 12px',
+    border: '1px solid #eaecf0',
+    borderRadius: '9px',
+    backgroundColor: '#ffffff',
+    color: '#6b7280',
+    fontSize: '13px',
+    textAlign: 'left',
+    cursor: 'pointer'
+  },
+
+  categoryFilterMenu: {
+    position: 'absolute',
+    top: 'calc(100% + 6px)',
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    maxHeight: '240px',
+    overflowY: 'auto',
+    padding: '5px',
+    border: '1px solid #eaecf0',
+    borderRadius: '9px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 8px 20px rgba(31, 41, 55, 0.12)'
+  },
+
+  categoryFilterOption: {
+    width: '100%',
+    display: 'block',
+    padding: '9px 10px',
+    border: 'none',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    fontSize: '13px',
+    textAlign: 'left',
+    cursor: 'pointer'
+  },
+
+  categoryFilterOptionActive: {
+    backgroundColor: '#f3e8ff',
+    color: '#6b21a8',
+    fontWeight: '700'
+  },
+
   resultsHeading: {
     display: 'flex',
     alignItems: 'center',
@@ -2355,6 +2565,16 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '5px'
+  },
+
+  reservationBusinessName: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    margin: '-8px 0 14px',
+    color: '#6b21a8',
+    fontSize: '12px',
+    fontWeight: '700'
   },
 
   reservaDetails: {

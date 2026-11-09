@@ -5,6 +5,8 @@ import API from '../services/api';
 import BrandMark from '../components/BrandMark';
 import ModalAgendar from '../components/ModalAgendar';
 import { useAuth } from '../context/AuthContext';
+import { resumirHorarioEmpresa } from '../utils/horarioEmpresa';
+import { obtenerNombreNegocio } from '../utils/nombreNegocio';
 
 export default function PublicProfessional() {
   const { slug } = useParams();
@@ -17,6 +19,10 @@ export default function PublicProfessional() {
   const imageUrl = profile?.imagen?.startsWith('/uploads/')
     ? new URL(profile.imagen, API.defaults.baseURL).toString()
     : profile?.imagen;
+  const nombreNegocio = obtenerNombreNegocio({
+    nombreNegocio: profile?.nombreNegocio,
+    tipoNegocio: profile?.tipoNegocio
+  });
 
   useEffect(() => {
     let active = true;
@@ -56,10 +62,10 @@ export default function PublicProfessional() {
       {error ? <p role="alert" style={styles.error}>{error}</p> : !profile ? <p style={styles.loading}>Cargando perfil...</p> : (
         <div style={styles.content}>
           <section style={styles.profile}>
-            {imageUrl ? <img src={imageUrl} alt={`Logo de ${profile.nombreNegocio}`} style={styles.image} /> : <BrandMark size={72} />}
+            {imageUrl ? <img src={imageUrl} alt={`Logo de ${nombreNegocio}`} style={styles.image} /> : <BrandMark size={72} />}
             <div>
               <p style={styles.eyebrow}>Perfil profesional</p>
-              <h1 style={styles.title}>{profile.nombreNegocio}</h1>
+              <h1 style={styles.title}>{nombreNegocio}</h1>
               <p style={styles.description}>{profile.descripcion || 'Servicios profesionales con reserva en línea.'}</p>
               <p style={styles.meta}><MapPin size={15} />{profile.direccion || 'Ubicación por confirmar'}</p>
               {profile.telefono && <p style={styles.meta}>Tel. {profile.telefono}</p>}
@@ -76,6 +82,9 @@ export default function PublicProfessional() {
                     <h3 style={styles.serviceTitle}>{service.nombre}</h3>
                     <p style={styles.description}>{service.descripcion || 'Reserva este servicio en línea.'}</p>
                     <p style={styles.meta}><Clock3 size={15} />{service.duracion} min · ${Number(service.precio).toLocaleString()} COP</p>
+                    {service.empresa?.horarioEmpresa && (
+                      <p style={styles.meta}><Clock3 size={15} />Horario: {resumirHorarioEmpresa(service.empresa.horarioEmpresa)}</p>
+                    )}
                     {user?.rol === 'cliente' ? (
                       <button type="button" onClick={() => { setMessage(''); setSelectedService(service); }} style={styles.book}>Reservar servicio</button>
                     ) : <Link to={user ? '/login' : '/registro'} style={styles.bookLink}>Inicia sesión como cliente para reservar</Link>}

@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  LogOut,
   Search,
   ShieldCheck,
   UserRound,
@@ -28,7 +29,8 @@ export default function DashboardSidebar({
   userName,
   items,
   activeId,
-  onSelect
+  onSelect,
+  onLogout
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const firstName = userName?.trim().split(/\s+/)[0] || 'Usuario';
@@ -94,6 +96,17 @@ export default function DashboardSidebar({
           <span className="dashboard-sidebar__footer-mark">S</span>
           <span>ServiGo <small>Agenda. Reserva. Listo.</small></span>
         </div>
+      )}
+      {onLogout && (
+        <button
+          type="button"
+          className="dashboard-sidebar__logout"
+          onClick={onLogout}
+          title={collapsed ? 'Cerrar sesión' : undefined}
+        >
+          <LogOut size={17} />
+          {!collapsed && <span>Cerrar sesión</span>}
+        </button>
       )}
     </aside>
   );
