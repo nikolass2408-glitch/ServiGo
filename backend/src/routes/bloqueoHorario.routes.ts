@@ -5,7 +5,7 @@ import { authorizeRoles } from "../middlewares/role.middleware";
 import { ROLES } from "../data/roles";
 
 const router = Router();
-router.use(authenticateToken, authorizeRoles(ROLES.PRO, ROLES.ADMIN));
+router.use("/disponibilidad/bloqueos/", authenticateToken, authorizeRoles(ROLES.PRO, ROLES.ADMIN));
 router.get("/disponibilidad/bloqueos/", BloqueoHorarioController.listar);
 router.post("/disponibilidad/bloqueos/", BloqueoHorarioController.crear);
 router.delete("/disponibilidad/bloqueos/:id/", BloqueoHorarioController.eliminar);

@@ -1,0 +1,290 @@
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 100% 45%, rgba(216, 180, 254, .42), transparent 35%),
+    linear-gradient(110deg, #faf7ff 0%, #f4efff 58%, #fff 100%);
+}
+
+.home-hero::after {
+  position: absolute;
+  right: -7%;
+  bottom: -78px;
+  width: 48%;
+  height: 150px;
+  border-radius: 50% 0 0;
+  background: rgba(221, 214, 254, .45);
+  content: '';
+  pointer-events: none;
+}
+
+.home-hero__layout {
+  position: relative;
+  z-index: 1;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .95fr);
+  min-height: 330px;
+}
+
+.home-hero__visual {
+  position: relative;
+  display: flex;
+  min-height: 300px;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.home-hero__visual::before {
+  position: absolute;
+  z-index: -1;
+  width: 300px;
+  height: 260px;
+  border-radius: 48% 52% 58% 42%;
+  background: #e9ddff;
+  content: '';
+  transform: rotate(-12deg);
+}
+
+.home-hero__phone {
+  position: relative;
+  z-index: 1;
+  width: 158px;
+  height: 258px;
+  padding: 8px;
+  border: 5px solid #211942;
+  border-radius: 27px;
+  background: #fff;
+  box-shadow: 0 18px 30px rgba(47, 31, 94, .22);
+  transform: rotate(3deg);
+}
+
+.home-hero__speaker {
+  position: absolute;
+  z-index: 2;
+  top: 5px;
+  left: 50%;
+  width: 48px;
+  height: 8px;
+  border-radius: 0 0 8px 8px;
+  background: #211942;
+  transform: translateX(-50%);
+}
+
+.home-hero__screen {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 20px 8px 4px;
+  border-radius: 17px;
+  color: #29233b;
+  background: #fbfaff;
+  font-family: sans-serif;
+}
+
+.home-hero__app-brand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 22px;
+  color: #29233b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.home-hero__app-brand span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 5px;
+  background: #6b21a8;
+  color: #fff;
+}
+
+.home-hero__appointment-title {
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.home-hero__appointment {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 6px;
+  border: 1px solid #eee8fb;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(47, 31, 94, .07);
+}
+
+.home-hero__service-icon {
+  display: grid;
+  width: 27px;
+  height: 30px;
+  flex: 0 0 27px;
+  place-items: center;
+  border-radius: 7px;
+  background: #f2eaff;
+  color: #6b21a8;
+}
+
+.home-hero__appointment strong,
+.home-hero__appointment small {
+  display: block;
+  white-space: nowrap;
+}
+
+.home-hero__appointment strong {
+  font-size: 8px;
+}
+
+.home-hero__appointment small {
+  margin-top: 4px;
+  color: #7b7488;
+  font-size: 7px;
+}
+
+.home-hero__check {
+  margin-left: auto;
+  color: #6b21a8;
+}
+
+.home-hero__phone-nav {
+  display: flex;
+  justify-content: space-around;
+  margin-top: auto;
+  padding: 8px 0 2px;
+  border-top: 1px solid #eee8f6;
+  color: #6b21a8;
+}
+
+.home-hero__calendar {
+  position: absolute;
+  right: 3%;
+  top: 50%;
+  width: 190px;
+  padding: 14px;
+  border: 1px solid #eee8f6;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 15px 32px rgba(47, 31, 94, .13);
+  color: #423b52;
+  font-family: sans-serif;
+  transform: translateY(-50%) rotate(2deg);
+}
+
+.home-hero__calendar-heading,
+.home-hero__weekdays,
+.home-hero__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+  text-align: center;
+}
+
+.home-hero__calendar-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  font-size: 11px;
+}
+
+.home-hero__weekdays {
+  margin-bottom: 7px;
+  color: #9690a2;
+  font-size: 8px;
+}
+
+.home-hero__days {
+  gap: 3px 0;
+  font-size: 8px;
+}
+
+.home-hero__days span {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.home-hero__days .is-selected {
+  background: #6b21a8;
+  color: #fff;
+}
+
+.home-hero__floating-check {
+  position: absolute;
+  top: 20px;
+  right: 4%;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: #6b21a8;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(107, 33, 168, .25);
+}
+
+@media (max-width: 760px) {
+  .home-navbar {
+    flex-wrap: wrap;
+    padding: 12px 16px !important;
+  }
+
+  .home-navbar nav {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .home-navbar > div:last-child {
+    gap: 4px !important;
+  }
+
+  .home-navbar button {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .home-hero h1 {
+    font-size: 32px !important;
+  }
+
+  .home-hero__layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 32px;
+  }
+
+  .home-hero__visual {
+    min-height: 260px;
+  }
+
+  .home-hero__phone {
+    width: 138px;
+    height: 226px;
+  }
+
+  .home-hero__calendar {
+    right: 0;
+    width: 160px;
+    padding: 10px;
+  }
+
+  .home-hero__floating-check {
+    top: 10px;
+    right: 7%;
+  }
+}
+
+.home-navbar {
+  gap: 14px;
+}
+
+.home-navbar nav {
+  gap: 18px !important;
+}

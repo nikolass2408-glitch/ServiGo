@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { demoAdapter } from './demoApi';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  adapter: import.meta.env.VITE_DEMO_MODE === 'false' ? undefined : demoAdapter,
+  baseURL: 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -20,6 +18,21 @@ API.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isLoginRequest = error.config?.url?.endsWith('/login/');
+    if (error.response?.status === 401 && !isLoginRequest) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('servigo_user');
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login?session=expired');
+      }
+    }
     return Promise.reject(error);
   }
 );

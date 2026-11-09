@@ -8,6 +8,8 @@ import PublicProfessional from '../pages/PublicProfessional';
 import DashboardCliente from '../pages/cliente/DashboardCliente';
 import DashboardProfesional from '../pages/profesional/DashboardProfesional';
 import DashboardAdmin from '../pages/admin/DashboardAdmin';
+import DashboardDueno from '../pages/dueno/DashboardDueno';
+import ActivarInvitacion from '../pages/auth/ActivarInvitacion';
 
 import ProtectedRoute from './ProtectedRoute';
 
@@ -59,6 +61,7 @@ export default function AppRoutes() {
         path="/recuperar-password"
         element={<RecuperarPassword />}
       />
+      <Route path="/activar-invitacion" element={<ActivarInvitacion />} />
 
       <Route
         path="/p/:slug"
@@ -71,13 +74,13 @@ export default function AppRoutes() {
 
       {/* CLIENTE */}
       <Route
-        path="/cliente"
-        element={
-          <ProtectedRoute allowedRoles={['cliente']}>
-            <DashboardCliente />
-          </ProtectedRoute>
-        }
-      />
+      path="/cliente/*"
+      element={
+      <ProtectedRoute allowedRoles={['cliente']}>
+      <DashboardCliente />
+    </ProtectedRoute>
+  }
+/>
 
       {/* PROFESIONAL */}
       <Route
@@ -90,6 +93,15 @@ export default function AppRoutes() {
       />
 
       {/* ADMIN */}
+      <Route
+        path="/dueno"
+        element={
+          <ProtectedRoute allowedRoles={['dueno']}>
+            <DashboardDueno />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin"
         element={

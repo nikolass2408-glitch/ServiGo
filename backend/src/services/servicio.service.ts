@@ -1,13 +1,24 @@
 import { ServicioRepository } from "../repositories/servicio.repository";
 import { ProfesionalRepository } from "../repositories/profesional.repository";
 import { ROLES } from "../data/roles";
+import { EmpresaService } from "./empresa.service";
 
 export class ServicioService {
+  private static async puedeGestionar(profesional: any, actor: any, empresaId?: string) {
+    if (actor.rol === ROLES.ADMIN || profesional.usuario.toString() === actor.id) return true;
+    if (actor.rol === ROLES.DUENO && empresaId) {
+      return EmpresaService.esMiembroActivo(actor.id, empresaId, profesional._id.toString());
+    }
+    return false;
+  }
+
   static async crear(data: any, actor: any) {
     const profesional = await ProfesionalRepository.buscarPorId(data.profesional);
-    if (!profesional || !profesional.activo) throw Object.assign(new Error("El profesional no existe o no está disponible."), { statusCode: 404 });
+    if (!profesional || (!profesional.activo && actor.rol !== ROLES.DUENO)) {
+      throw Object.assign(new Error("El profesional no existe o no está disponible."), { statusCode: 404 });
+    }
 
-    if (actor.rol !== ROLES.ADMIN && profesional.usuario.toString() !== actor.id) {
+    if (!(await this.puedeGestionar(profesional, actor, data.empresa))) {
       throw Object.assign(new Error("No puedes crear servicios para otro profesional."), { statusCode: 403 });
     }
 
@@ -26,6 +37,7 @@ export class ServicioService {
 
     return ServicioRepository.crear({
       profesional: profesional._id,
+      ...(actor.rol === ROLES.DUENO ? { empresa: data.empresa } : {}),
       nombre: String(data.nombre).trim(),
       descripcion: data.descripcion || "",
       precio,
@@ -38,7 +50,7 @@ export class ServicioService {
     const servicio = await ServicioRepository.buscarPorId(id);
     if (!servicio) throw Object.assign(new Error("El servicio no existe."), { statusCode: 404 });
     const profesional = await ProfesionalRepository.buscarPorId(servicio.profesional.toString());
-    if (!profesional || (actor.rol !== ROLES.ADMIN && profesional.usuario.toString() !== actor.id)) {
+    if (!profesional || !(await this.puedeGestionar(profesional, actor, servicio.empresa?.toString()))) {
       throw Object.assign(new Error("No puedes modificar este servicio."), { statusCode: 403 });
     }
 
@@ -67,7 +79,7 @@ export class ServicioService {
     const servicio = await ServicioRepository.buscarPorId(id);
     if (!servicio) throw Object.assign(new Error("El servicio no existe."), { statusCode: 404 });
     const profesional = await ProfesionalRepository.buscarPorId(servicio.profesional.toString());
-    if (!profesional || (actor.rol !== ROLES.ADMIN && profesional.usuario.toString() !== actor.id)) {
+    if (!profesional || !(await this.puedeGestionar(profesional, actor, servicio.empresa?.toString()))) {
       throw Object.assign(new Error("No puedes desactivar este servicio."), { statusCode: 403 });
     }
     return ServicioRepository.eliminar(id);

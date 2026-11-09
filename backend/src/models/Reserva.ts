@@ -9,6 +9,8 @@ export interface IReserva extends Document {
   hora: string;
   minutosOcupados: number[];
   estado: EstadoReserva;
+  calificacion?: number;
+  calificadaEn?: Date;
   notas?: string;
   creadaEn: Date;
   actualizadaEn: Date;
@@ -23,6 +25,8 @@ const reservaSchema = new Schema<IReserva>(
     hora: { type: String, required: true },
     minutosOcupados: { type: [Number], default: undefined },
     estado: { type: String, enum: Object.values(ESTADOS_RESERVA), default: ESTADOS_RESERVA.PENDIENTE },
+    calificacion: { type: Number, min: 1, max: 5 },
+    calificadaEn: { type: Date },
     notas: { type: String, default: "" },
   },
   { timestamps: { createdAt: "creadaEn", updatedAt: "actualizadaEn" } }

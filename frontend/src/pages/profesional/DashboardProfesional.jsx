@@ -3,7 +3,6 @@ import {
   Calendar,
   CheckCircle,
   Eye,
-  LogOut,
   X,
   User,
   Phone,
@@ -17,6 +16,7 @@ import PerfilPanel from '../../components/PerfilPanel';
 import ProfessionalWorkspace from '../../components/ProfessionalWorkspace';
 import BrandMark from '../../components/BrandMark';
 import NotificationBell from '../../components/NotificationBell';
+import DashboardSidebar from '../../components/DashboardSidebar';
 
 const normalizarCita = (cita) => {
   const estadoCode = String(cita.estado || 'PENDIENTE').toUpperCase();
@@ -34,6 +34,7 @@ const normalizarCita = (cita) => {
 export default function DashboardProfesional() {
   const { user, logout } = useAuth();
   const [profileRevision, setProfileRevision] = useState(0);
+  const [activeSection, setActiveSection] = useState('perfil');
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -230,21 +231,39 @@ export default function DashboardProfesional() {
           <span style={styles.userName}>
             {user?.firstName || 'Profesional'}
           </span>
-          <NotificationBell userId={user?.id} />
-
-          <button type="button" onClick={logout} style={styles.btnLogout}>
-            <LogOut size={16} />
-            Salir
-          </button>
+          <NotificationBell
+            userId={user?.id}
+            onNotificationClick={(notification) => {
+              const reservaId = String(notification.reserva?._id || notification.reserva || '');
+              const cita = citas.find((item) => String(item._id || item.id) === reservaId);
+              if (!cita) {
+                throw new Error('No se encontró la cita asociada a esta notificación.');
+              }
+              setActiveSection('agenda');
+              abrirReserva(cita);
+            }}
+          />
 
         </div>
 
       </header>
 
 
-      {/* CONTENIDO */}
+      <div className="dashboard-layout">
+        <DashboardSidebar
+          role="Prestador de servicio"
+          userName={[user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username}
+          activeId={activeSection}
+          items={[
+            { id: 'perfil', label: 'Perfil', icon: 'profile' },
+            { id: 'agenda', label: 'Agenda de citas', icon: 'agenda', count: reservasActivas },
+            { id: 'servicios', label: 'Mis servicios', icon: 'services' }
+          ]}
+          onSelect={setActiveSection}
+          onLogout={logout}
+        />
 
-      <main style={styles.content}>
+      <main className="dashboard-main" style={styles.content}>
 
         <div>
           <h1 style={styles.mainTitle}>
@@ -256,12 +275,16 @@ export default function DashboardProfesional() {
           </p>
         </div>
 
-        <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
-        <ProfessionalWorkspace key={profileRevision} user={user} />
+        {activeSection === 'perfil' && (
+          <PerfilPanel profesional onSaved={() => setProfileRevision((revision) => revision + 1)} />
+        )}
+        {activeSection === 'servicios' && (
+          <ProfessionalWorkspace key={profileRevision} user={user} />
+        )}
 
         {/* ERROR */}
 
-        {error && (
+        {activeSection === 'agenda' && error && (
           <div style={styles.error}>
             {error}
           </div>
@@ -270,6 +293,7 @@ export default function DashboardProfesional() {
 
         {/* MÉTRICAS */}
 
+        {activeSection === 'agenda' && <>
         <div style={styles.metrics}>
 
           <div style={styles.card}>
@@ -482,8 +506,10 @@ export default function DashboardProfesional() {
           </div>
 
         </section>
+        </>}
 
       </main>
+      </div>
 
 
       {/* MODAL */}
@@ -767,20 +793,11 @@ const styles = {
     fontWeight: '600'
   },
 
-  btnLogout: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    color: '#ef4444',
-    background: 'transparent',
-    border: 0,
-    cursor: 'pointer'
-  },
-
   content: {
-    maxWidth: '1100px',
+    width: '100%',
+    maxWidth: 'none',
     margin: '30px auto',
-    padding: '0 20px'
+    padding: '0'
   },
 
   mainTitle: {

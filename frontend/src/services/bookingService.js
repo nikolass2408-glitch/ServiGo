@@ -29,6 +29,11 @@ export const bookingService = {
     return response.data;
   },
 
+  calificarReserva: async (id, calificacion) => {
+    const response = await API.patch(`/reservas/${id}/calificacion/`, { calificacion });
+    return response.data;
+  },
+
   cancelarReserva: async (id) => {
     const response = await API.patch(`/reservas/${id}/cancelar/`);
     return response.data;

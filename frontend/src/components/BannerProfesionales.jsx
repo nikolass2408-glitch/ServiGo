@@ -1,7 +1,7 @@
-import React from 'react';
 // Importamos los íconos para la sección de beneficios inferiores
 import { Calendar, Clock, Users, Bell, Smartphone, ArrowRight } from 'lucide-react';
 import BrandMark from './BrandMark';
+import { Link } from 'react-router-dom';
 
 export default function BannerProfesionales() {
   // Lista de características principales con sus íconos
@@ -14,7 +14,7 @@ export default function BannerProfesionales() {
   ];
 
   return (
-    <section style={styles.section}>
+    <section id="profesionales" style={styles.section}>
       
       {/* TARJETA MORADA PRINCIPAL - LLAMADO PARA PROFESIONALES */}
       <div style={styles.bannerCard}>
@@ -26,9 +26,9 @@ export default function BannerProfesionales() {
           <p style={styles.bannerSubtitle}>
             Organiza tus servicios, horarios, clientes y reservas desde un solo lugar.
           </p>
-          <button style={styles.btnCreateProfile}>
+          <Link to="/registro" style={styles.btnCreateProfile}>
             Crear mi perfil profesional <ArrowRight size={16} />
-          </button>
+          </Link>
         </div>
 
         {/* Lado derecho: Vista previa simulada de la Dashboard del profesional */}
@@ -41,18 +41,18 @@ export default function BannerProfesionales() {
               </div>
             </div>
             <div style={styles.mockupBody}>
-              <p style={styles.mockupTitle}>Tus reservas</p>
+              <p style={styles.mockupTitle}>Tu espacio profesional</p>
               <div style={styles.reservationItem}>
-                <span>👤 Corte de cabello</span>
-                <span style={styles.statusConfirmed}>10:00 a.m. • Confirmada</span>
+                <span>Servicios</span>
+                <span style={styles.statusConfirmed}>Gestiona tu catálogo</span>
               </div>
               <div style={styles.reservationItem}>
-                <span>👤 Manicura</span>
-                <span style={styles.statusConfirmed}>12:00 p.m. • Confirmada</span>
+                <span>Horarios</span>
+                <span style={styles.statusConfirmed}>Define disponibilidad</span>
               </div>
               <div style={styles.reservationItem}>
-                <span>👤 Masaje relajante</span>
-                <span style={styles.statusPending}>3:00 p.m. • Pendiente</span>
+                <span>Notificaciones</span>
+                <span style={styles.statusPending}>Atiende solicitudes</span>
               </div>
             </div>
           </div>
@@ -88,8 +88,8 @@ const styles = {
     fontFamily: 'sans-serif'
   },
   bannerCard: {
-    backgroundColor: '#6b21a8', // Color morado institucional
-    borderRadius: '24px',
+    background: 'linear-gradient(115deg, #5b21b6, #8b5cf6)',
+    borderRadius: '12px',
     padding: '48px',
     color: '#ffffff',
     display: 'flex',
