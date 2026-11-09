@@ -4,6 +4,7 @@ import { ServicioRepository } from "../repositories/servicio.repository";
 import { HorarioRepository } from "../repositories/horario.repository";
 import { NotificacionRepository } from "../repositories/notificacion.repository";
 import { BloqueoHorarioRepository } from "../repositories/bloqueoHorario.repository";
+import { Empresa } from "../models/Empresa";
 import { MailService, DatosReservaCorreo } from "./mail.service";
 import { ESTADOS_RESERVA } from "../data/estadosReserva";
 import { ROLES } from "../data/roles";
@@ -16,6 +17,11 @@ import {
   validarPropiedadProfesionalReserva,
   validarPropiedadReserva,
 } from "./reserva.rules";
+import {
+  empresaPermiteReserva,
+  HorarioEmpresa,
+  validarReservaHorarioEmpresa,
+} from "./empresa.horario";
 
 function minutos(hora: string) {
   const [horas, minutosHora] = hora.split(":").map(Number);
@@ -44,7 +50,8 @@ async function validarHorarioProfesional(
   profesionalId: string,
   fecha: string,
   hora: string,
-  duracion: number
+  duracion: number,
+  horarioEmpresa?: HorarioEmpresa
 ) {
   const finSolicitado = minutos(hora) + duracion;
   const horaFin = `${String(Math.floor(finSolicitado / 60)).padStart(2, "0")}:${String(finSolicitado % 60).padStart(2, "0")}`;
@@ -76,6 +83,8 @@ async function validarHorarioProfesional(
       { statusCode: 409 }
     );
   }
+
+  validarReservaHorarioEmpresa(horarioEmpresa, fecha, hora, duracion);
 }
 
 export class ReservaService {
@@ -104,14 +113,17 @@ export class ReservaService {
         statusCode: 404,
       });
     }
-
+    const empresa = servicio.empresa
+      ? await Empresa.findById(servicio.empresa).select("horarioEmpresa")
+      : null;
     const fecha = String(datos.fecha);
     const hora = String(datos.hora);
     await validarHorarioProfesional(
       profesional._id.toString(),
       fecha,
       hora,
-      Number(servicio.duracion)
+      Number(servicio.duracion),
+      empresa?.horarioEmpresa
     );
 
     const existeConflicto = await ReservaRepository.existeConflictoPorDuracion(
@@ -254,11 +266,11 @@ export class ReservaService {
   }
 
   /**
-   * Confirma una reserva y notifica al cliente por correo.
+   * Confirma una reserva y notifica a la otra parte.
    */
   static async confirmar(id: string, user: any) {
-    if (user?.rol !== ROLES.ADMIN && user?.rol !== ROLES.PRO) {
-      throw Object.assign(new Error("Solo el profesional puede confirmar una reserva."), {
+    if (![ROLES.ADMIN, ROLES.PRO, ROLES.CLI].includes(user?.rol)) {
+      throw Object.assign(new Error("No tienes permisos para confirmar esta reserva."), {
         statusCode: 403,
       });
     }
@@ -267,27 +279,33 @@ export class ReservaService {
 
     reserva.estado = ESTADOS_RESERVA.CONFIRMADA;
     await reserva.save();
+    const confirmadaPorCliente = user?.rol === ROLES.CLI;
     await NotificacionRepository.crear({
-      usuario: idRelacionado(reserva.cliente),
+      usuario: confirmadaPorCliente
+        ? idRelacionado(reserva.profesional?.usuario)
+        : idRelacionado(reserva.cliente),
       reserva: reserva._id,
       tipo: TIPOS_NOTIFICACION.CONFIRMACION,
-      mensaje: `Tu reserva para ${reserva.servicio?.nombre || "el servicio"} fue confirmada.`,
+      mensaje: confirmadaPorCliente
+        ? `El cliente confirmó la reserva para ${reserva.servicio?.nombre || "el servicio"}.`
+        : `Tu reserva para ${reserva.servicio?.nombre || "el servicio"} fue confirmada.`,
     });
 
-    // Notificar al cliente la confirmación
-    const datosCorreo: DatosReservaCorreo = {
-      to: reserva.cliente?.email,
-      nombreCliente: reserva.cliente?.nombre || "Cliente",
-      servicio: reserva.servicio?.nombre || "Servicio",
-      profesional: reserva.profesional?.nombre,
-      fecha: reserva.fecha,
-      hora: reserva.hora,
-      codigo: String(reserva._id).slice(-6).toUpperCase(),
-    };
+    if (!confirmadaPorCliente) {
+      const datosCorreo: DatosReservaCorreo = {
+        to: reserva.cliente?.email,
+        nombreCliente: reserva.cliente?.nombre || "Cliente",
+        servicio: reserva.servicio?.nombre || "Servicio",
+        profesional: reserva.profesional?.nombre,
+        fecha: reserva.fecha,
+        hora: reserva.hora,
+        codigo: String(reserva._id).slice(-6).toUpperCase(),
+      };
 
-    MailService.enviarConfirmacionReserva(datosCorreo).catch((error) => {
-      console.error("[MAIL ERROR] Error al enviar correo de confirmación:", error);
-    });
+      MailService.enviarConfirmacionReserva(datosCorreo).catch((error) => {
+        console.error("[MAIL ERROR] Error al enviar correo de confirmación:", error);
+      });
+    }
 
     return reserva;
   }
@@ -336,11 +354,11 @@ export class ReservaService {
   }
 
   /**
-   * Rechaza una reserva.
+   * Rechaza una reserva y notifica a la otra parte.
    */
   static async rechazar(id: string, user: any) {
-    if (user?.rol !== ROLES.ADMIN && user?.rol !== ROLES.PRO) {
-      throw Object.assign(new Error("Solo un profesional puede rechazar una reserva."), {
+    if (![ROLES.ADMIN, ROLES.PRO, ROLES.CLI].includes(user?.rol)) {
+      throw Object.assign(new Error("No tienes permisos para rechazar esta reserva."), {
         statusCode: 403,
       });
     }
@@ -353,11 +371,16 @@ export class ReservaService {
     reserva.estado = ESTADOS_RESERVA.RECHAZADA || "RECHAZADA";
     reserva.minutosOcupados = undefined;
     await reserva.save();
+    const rechazadaPorCliente = user?.rol === ROLES.CLI;
     await NotificacionRepository.crear({
-      usuario: idRelacionado(reserva.cliente),
+      usuario: rechazadaPorCliente
+        ? idRelacionado(reserva.profesional?.usuario)
+        : idRelacionado(reserva.cliente),
       reserva: reserva._id,
       tipo: TIPOS_NOTIFICACION.RECHAZO,
-      mensaje: `El profesional rechazó la solicitud para ${reserva.servicio?.nombre || "el servicio"}.`,
+      mensaje: rechazadaPorCliente
+        ? `El cliente rechazó la reserva para ${reserva.servicio?.nombre || "el servicio"}.`
+        : `El profesional rechazó la solicitud para ${reserva.servicio?.nombre || "el servicio"}.`,
     });
     return reserva;
   }
@@ -378,11 +401,15 @@ export class ReservaService {
         statusCode: 404,
       });
     }
+    const empresa = servicio.empresa
+      ? await Empresa.findById(servicio.empresa).select("horarioEmpresa")
+      : null;
     await validarHorarioProfesional(
       profesionalId,
       nuevaFecha,
       nuevaHora,
-      Number(servicio.duracion)
+      Number(servicio.duracion),
+      empresa?.horarioEmpresa
     );
 
     const existeConflicto = await ReservaRepository.existeConflictoPorDuracion(
@@ -435,6 +462,36 @@ export class ReservaService {
     return reserva;
   }
 
+  static async calificar(id: string, clienteId: string, valor: unknown) {
+    const calificacion = Number(valor);
+    if (!Number.isInteger(calificacion) || calificacion < 1 || calificacion > 5) {
+      throw Object.assign(new Error("La calificación debe ser un número entero entre 1 y 5."), {
+        statusCode: 400,
+      });
+    }
+
+    const reserva = await ReservaRepository.buscarDeCliente(id, clienteId);
+    if (!reserva) {
+      throw Object.assign(new Error("No se encontró una reserva tuya con ese identificador."), {
+        statusCode: 404,
+      });
+    }
+    if (reserva.estado !== ESTADOS_RESERVA.COMPLETADA) {
+      throw Object.assign(new Error("Solo puedes calificar una reserva completada."), {
+        statusCode: 400,
+      });
+    }
+    if (reserva.calificacion !== undefined) {
+      throw Object.assign(new Error("Esta reserva ya fue calificada."), { statusCode: 409 });
+    }
+
+    const actualizada = await ReservaRepository.calificarCompletada(id, clienteId, calificacion);
+    if (!actualizada) {
+      throw Object.assign(new Error("Esta reserva ya fue calificada."), { statusCode: 409 });
+    }
+    return { calificacion: actualizada.calificacion, calificadaEn: actualizada.calificadaEn };
+  }
+
   /**
    * Consulta las horas disponibles de un profesional para un día específico.
    */
@@ -454,6 +511,17 @@ export class ReservaService {
       (servicio) =>
         servicio.activo &&
         (!servicioId || servicio._id.toString() === servicioId)
+    );
+    const empresaIds = [...new Set(
+      servicios
+        .map((servicio) => servicio.empresa?.toString())
+        .filter((id): id is string => Boolean(id))
+    )];
+    const empresas = await Empresa.find({ _id: { $in: empresaIds } })
+      .select("horarioEmpresa")
+      .lean();
+    const horariosEmpresa = new Map(
+      empresas.map((empresa) => [empresa._id.toString(), empresa.horarioEmpresa])
     );
     const horarios = await HorarioRepository.activosPorDia(
       profesionalId,
@@ -476,6 +544,10 @@ export class ReservaService {
           const hora = `${String(Math.floor(inicio / 60)).padStart(2, "0")}:${String(inicio % 60).padStart(2, "0")}`;
           if (new Date(`${fecha}T${hora}:00`) <= ahora) continue;
           const fin = inicio + duracion;
+          const horarioEmpresa = servicio.empresa
+            ? horariosEmpresa.get(servicio.empresa.toString())
+            : undefined;
+          if (!empresaPermiteReserva(horarioEmpresa, fecha, hora, duracion)) continue;
           const conflicto = reservas.some((reserva: any) => {
             const inicioExistente = minutos(reserva.hora);
             const finExistente = inicioExistente + Number(reserva.servicio?.duracion || 30);

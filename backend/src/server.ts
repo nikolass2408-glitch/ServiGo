@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3000);
 async function startServer() {
   await connectDatabase();
   iniciarProgramadorRecordatorios();
-
+  
   const app = (await import("./app")).default;
 
   app.listen(PORT, () => {

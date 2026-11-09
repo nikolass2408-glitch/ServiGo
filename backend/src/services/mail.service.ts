@@ -141,4 +141,24 @@ export class MailService {
       html,
     });
   }
+
+  static async enviarInvitacionProfesional(to: string, nombre: string, empresa: string, url: string) {
+    const html = `
+      <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:24px;">
+        <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;text-align:center;">
+          <h2 style="color:#1f2937;margin:0 0 12px;">Invitación a ServiGo</h2>
+          <p style="color:#6b7280;font-size:14px;">Hola ${esc(nombre)}, ${esc(empresa)} te invitó a unirte como profesional.</p>
+          <a href="${esc(url)}" style="display:inline-block;background:#6d28d9;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:8px;margin:16px 0;">Ver invitación</a>
+          <p style="color:#6b7280;font-size:13px;">El enlace vence en 24 horas y solo puede utilizarse una vez. Si aún no tienes una cuenta profesional, ahí podrás crear tu contraseña.</p>
+          <p style="color:#9ca3af;font-size:12px;">Si no esperabas esta invitación, puedes ignorar este correo.</p>
+        </div>
+      </div>`;
+
+    await this.crearTransporter().sendMail({
+      from: process.env.MAIL_FROM || process.env.MAIL_USER,
+      to,
+      subject: `Invitación de ${empresa} - ServiGo`,
+      html,
+    });
+  }
 }

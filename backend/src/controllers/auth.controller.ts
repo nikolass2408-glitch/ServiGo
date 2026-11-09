@@ -23,7 +23,7 @@ export class AuthController {
     } catch (error: any) {
       console.error(">>> ERROR REAL EN REGISTRO:", error);
 
-
+  
       if (error.code === 11000) {
         const campoDuplicado = Object.keys(error.keyValue || {})[0] || "campo";
         res.status(400).json({

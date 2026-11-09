@@ -1,0 +1,53 @@
+/* ServiGo: diseño adaptable */
+@media (max-width: 900px) {
+  .servigo-dashboard {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .servigo-dashboard {
+    min-width: 0;
+  }
+
+  .servigo-dashboard > aside {
+    padding: 15px;
+    border-right: none;
+    border-bottom: 1px solid #eaecf0;
+  }
+
+  .servigo-dashboard > aside nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .servigo-dashboard > aside nav button {
+    font-size: 12px;
+    padding: 10px 8px;
+    gap: 7px;
+  }
+
+  .servigo-dashboard > aside nav button span {
+    overflow-wrap: anywhere;
+  }
+
+  .servigo-dashboard > aside nav button svg:last-child {
+    display: none;
+  }
+
+  .servigo-dashboard > aside > div:nth-last-child(2) {
+    display: none;
+  }
+
+  .servigo-dashboard > main {
+    padding: 20px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .servigo-dashboard > main > section > div:first-child h1,
+  .servigo-dashboard > main h1 {
+    font-size: 22px;
+  }
+}

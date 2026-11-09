@@ -14,6 +14,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     // Redirigir según el rol que realmente tiene
     if (user.rol === 'cliente') return <Navigate to="/cliente" replace />;
     if (user.rol === 'profesional') return <Navigate to="/profesional" replace />;
+    if (user.rol === 'dueno') return <Navigate to="/dueno" replace />;
     if (user.rol === 'admin') return <Navigate to="/admin" replace />;
   }
 

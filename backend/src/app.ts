@@ -12,6 +12,7 @@ import notificacionRoutes from "./routes/notificacion.routes";
 import reporteRoutes from "./routes/reporte.routes";
 import adminRoutes from "./routes/admin.routes";
 import bloqueoHorarioRoutes from "./routes/bloqueoHorario.routes";
+import empresaRoutes from "./routes/empresa.routes";
 import path from "path";
 
 import { errorHandler, notFound } from "./middlewares/error.middleware";
@@ -24,7 +25,7 @@ app.use(helmet({
 
 app.use(
   cors({
-    origin: true,
+    origin: true,      
     credentials: true,
   })
 );
@@ -54,6 +55,7 @@ app.use("/api", notificacionRoutes);
 app.use("/api", reporteRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", bloqueoHorarioRoutes);
+app.use("/api", empresaRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
