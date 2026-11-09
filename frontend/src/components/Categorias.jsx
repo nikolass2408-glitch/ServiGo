@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Scissors, Sparkles, Heart, PenTool, Dumbbell, MoreHorizontal, Search, MapPin, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import API from '../services/api';
+import { obtenerNombreNegocio } from '../utils/nombreNegocio';
 
 const nombresCategoria = {
   BARBERIA: 'Barbería',
@@ -42,7 +43,11 @@ export default function Categorias() {
             ...servicio,
             id: servicio._id || servicio.id,
             categoria: nombresCategoria[profesional.tipoNegocio] || 'Servicios',
-            profesional: profesional.nombreNegocio || profesional.nombre || 'Profesional ServiGo',
+            profesional: obtenerNombreNegocio({
+              nombreEmpresa: servicio.empresa?.nombre,
+              nombreNegocio: profesional.nombreNegocio || profesional.nombre,
+              tipoNegocio: profesional.tipoNegocio
+            }),
             ubicacion: profesional.direccion || '',
             enlacePersonalizado: profesional.enlacePersonalizado
           };

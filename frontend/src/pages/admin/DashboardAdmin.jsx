@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Briefcase, CalendarDays, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { Briefcase, CalendarDays, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import BrandMark from '../../components/BrandMark';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
@@ -113,7 +113,6 @@ export default function DashboardAdmin() {
         </div>
         <div style={styles.userMenu}>
           <span style={styles.userName}>{user?.firstName || 'Administración'}</span>
-          <button type="button" onClick={logout} style={styles.logout}><LogOut size={16} />Salir</button>
         </div>
       </header>
 
@@ -132,6 +131,7 @@ export default function DashboardAdmin() {
             setActiveSection(section);
             requestAnimationFrame(() => document.getElementById(`admin-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
           }}
+          onLogout={logout}
         />
       <main className="dashboard-main" style={styles.content}>
         <div style={styles.titleRow}>
@@ -248,7 +248,6 @@ const styles = {
   logoText: { fontSize: '20px', fontWeight: 800, color: '#1f2937' },
   userMenu: { display: 'flex', alignItems: 'center', gap: '16px' },
   userName: { color: '#374151', fontSize: '14px', fontWeight: 600 },
-  logout: { display: 'inline-flex', alignItems: 'center', gap: '6px', border: 0, background: 'transparent', color: '#b91c1c', cursor: 'pointer' },
   content: { width: '100%', maxWidth: 'none', display: 'flex', flexDirection: 'column', gap: '28px', margin: '30px auto', padding: 0 },
   titleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' },
   mainTitle: { margin: 0, color: '#1f2937', fontSize: '28px', fontWeight: 800 },

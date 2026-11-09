@@ -11,6 +11,14 @@ export class EmpresaController {
     res.status(201).json(await EmpresaService.crearEmpresa(String(req.user?.id), req.body));
   }
 
+  static async actualizarHorario(req: AuthRequest, res: Response) {
+    res.json(await EmpresaService.actualizarHorarioEmpresa(
+      String(req.user?.id),
+      String(req.params.empresaId),
+      req.body?.horarioEmpresa
+    ));
+  }
+
   static async invitarProfesional(req: AuthRequest, res: Response) {
     res.status(201).json(await EmpresaService.invitarProfesional(
       String(req.user?.id),

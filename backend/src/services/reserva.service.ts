@@ -4,6 +4,7 @@ import { ServicioRepository } from "../repositories/servicio.repository";
 import { HorarioRepository } from "../repositories/horario.repository";
 import { NotificacionRepository } from "../repositories/notificacion.repository";
 import { BloqueoHorarioRepository } from "../repositories/bloqueoHorario.repository";
+import { Empresa } from "../models/Empresa";
 import { MailService, DatosReservaCorreo } from "./mail.service";
 import { ESTADOS_RESERVA } from "../data/estadosReserva";
 import { ROLES } from "../data/roles";
@@ -16,6 +17,11 @@ import {
   validarPropiedadProfesionalReserva,
   validarPropiedadReserva,
 } from "./reserva.rules";
+import {
+  empresaPermiteReserva,
+  HorarioEmpresa,
+  validarReservaHorarioEmpresa,
+} from "./empresa.horario";
 
 function minutos(hora: string) {
   const [horas, minutosHora] = hora.split(":").map(Number);
@@ -44,7 +50,8 @@ async function validarHorarioProfesional(
   profesionalId: string,
   fecha: string,
   hora: string,
-  duracion: number
+  duracion: number,
+  horarioEmpresa?: HorarioEmpresa
 ) {
   const finSolicitado = minutos(hora) + duracion;
   const horaFin = `${String(Math.floor(finSolicitado / 60)).padStart(2, "0")}:${String(finSolicitado % 60).padStart(2, "0")}`;
@@ -76,6 +83,8 @@ async function validarHorarioProfesional(
       { statusCode: 409 }
     );
   }
+
+  validarReservaHorarioEmpresa(horarioEmpresa, fecha, hora, duracion);
 }
 
 export class ReservaService {
@@ -104,14 +113,17 @@ export class ReservaService {
         statusCode: 404,
       });
     }
-
+    const empresa = servicio.empresa
+      ? await Empresa.findById(servicio.empresa).select("horarioEmpresa")
+      : null;
     const fecha = String(datos.fecha);
     const hora = String(datos.hora);
     await validarHorarioProfesional(
       profesional._id.toString(),
       fecha,
       hora,
-      Number(servicio.duracion)
+      Number(servicio.duracion),
+      empresa?.horarioEmpresa
     );
 
     const existeConflicto = await ReservaRepository.existeConflictoPorDuracion(
@@ -389,11 +401,15 @@ export class ReservaService {
         statusCode: 404,
       });
     }
+    const empresa = servicio.empresa
+      ? await Empresa.findById(servicio.empresa).select("horarioEmpresa")
+      : null;
     await validarHorarioProfesional(
       profesionalId,
       nuevaFecha,
       nuevaHora,
-      Number(servicio.duracion)
+      Number(servicio.duracion),
+      empresa?.horarioEmpresa
     );
 
     const existeConflicto = await ReservaRepository.existeConflictoPorDuracion(
@@ -496,6 +512,17 @@ export class ReservaService {
         servicio.activo &&
         (!servicioId || servicio._id.toString() === servicioId)
     );
+    const empresaIds = [...new Set(
+      servicios
+        .map((servicio) => servicio.empresa?.toString())
+        .filter((id): id is string => Boolean(id))
+    )];
+    const empresas = await Empresa.find({ _id: { $in: empresaIds } })
+      .select("horarioEmpresa")
+      .lean();
+    const horariosEmpresa = new Map(
+      empresas.map((empresa) => [empresa._id.toString(), empresa.horarioEmpresa])
+    );
     const horarios = await HorarioRepository.activosPorDia(
       profesionalId,
       new Date(`${fecha}T12:00:00`).getDay()
@@ -517,6 +544,10 @@ export class ReservaService {
           const hora = `${String(Math.floor(inicio / 60)).padStart(2, "0")}:${String(inicio % 60).padStart(2, "0")}`;
           if (new Date(`${fecha}T${hora}:00`) <= ahora) continue;
           const fin = inicio + duracion;
+          const horarioEmpresa = servicio.empresa
+            ? horariosEmpresa.get(servicio.empresa.toString())
+            : undefined;
+          if (!empresaPermiteReserva(horarioEmpresa, fecha, hora, duracion)) continue;
           const conflicto = reservas.some((reserva: any) => {
             const inicioExistente = minutos(reserva.hora);
             const finExistente = inicioExistente + Number(reserva.servicio?.duracion || 30);

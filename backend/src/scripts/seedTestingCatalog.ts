@@ -8,23 +8,29 @@ import { Servicio } from "../models/Servicio";
 import { Usuario } from "../models/Usuario";
 
 const testPassword = process.env.SERVIGO_TEST_ACCOUNT_PASSWORD;
-const MIN_TEST_SERVICES = 20;
+const PROFESSIONALS_PER_BUSINESS = 5;
+const MIN_TEST_SERVICES = PROFESSIONALS_PER_BUSINESS * 4;
 const DIAS_SEMANA = [0, 1, 2, 3, 4, 5, 6];
 
 const catalogos = [
   {
-    email: "barberia.pruebas@servigo.test",
-    nombre: "Prestador Pruebas Barberia",
+    equipo: [
+      { email: "barberia.pruebas@servigo.test", nombre: "Tomás Herrera", especialidad: "Barbero clásico", calificacionDemo: 4.9, totalCalificacionesDemo: 38 },
+      { email: "barberia.pro.2@servigo.test", nombre: "Emilio Vargas", especialidad: "Especialista en degradados", calificacionDemo: 4.8, totalCalificacionesDemo: 31 },
+      { email: "barberia.pro.3@servigo.test", nombre: "Julián Pardo", especialidad: "Barbero y cuidado de barba", calificacionDemo: 4.7, totalCalificacionesDemo: 24 },
+      { email: "barberia.pro.4@servigo.test", nombre: "Esteban Ríos", especialidad: "Diseño y perfilado de barba", calificacionDemo: 4.9, totalCalificacionesDemo: 42 },
+      { email: "barberia.pro.5@servigo.test", nombre: "Gabriel Muñoz", especialidad: "Afeitado clásico", calificacionDemo: 4.6, totalCalificacionesDemo: 19 },
+    ],
     perfil: {
       tipoNegocio: "BARBERIA",
-      nombreNegocio: "Barberia Pruebas ServiGo",
-      descripcion: "Servicios de barberia para pruebas de agenda.",
+      nombreNegocio: "Barbería Matías",
+      descripcion: "Cortes clásicos, barba y cuidado personal.",
       telefono: "3005550101",
       direccion: "Bogota, Colombia",
-      enlacePersonalizado: "barberia-pruebas-servigo",
+      enlacePersonalizado: "barberia-matias",
     },
     servicios: [
-      ["Corte clasico", "Corte tradicional personalizado.", 30000, 30],
+      ["Corte clásico", "Corte tradicional personalizado.", 30000, 30],
       ["Corte degradado", "Degradado a tijera o maquina.", 35000, 40],
       ["Corte y barba", "Corte de cabello y perfilado de barba.", 50000, 60],
       ["Perfilado de barba", "Diseno y arreglo de barba.", 22000, 25],
@@ -32,34 +38,44 @@ const catalogos = [
     ],
   },
   {
-    email: "belleza.pruebas@servigo.test",
-    nombre: "Prestadora Pruebas Belleza",
+    equipo: [
+      { email: "belleza.pruebas@servigo.test", nombre: "Valentina Gómez", especialidad: "Manicurista", calificacionDemo: 4.9, totalCalificacionesDemo: 44 },
+      { email: "belleza.pro.2@servigo.test", nombre: "Mariana López", especialidad: "Esteticista facial", calificacionDemo: 4.8, totalCalificacionesDemo: 36 },
+      { email: "belleza.pro.3@servigo.test", nombre: "Isabella Rojas", especialidad: "Especialista en masajes", calificacionDemo: 4.7, totalCalificacionesDemo: 28 },
+      { email: "belleza.pro.4@servigo.test", nombre: "Camila Herrera", especialidad: "Pedicurista", calificacionDemo: 4.9, totalCalificacionesDemo: 40 },
+      { email: "belleza.pro.5@servigo.test", nombre: "Sofía Martínez", especialidad: "Diseñadora de cejas", calificacionDemo: 4.6, totalCalificacionesDemo: 21 },
+    ],
     perfil: {
       tipoNegocio: "SPA",
-      nombreNegocio: "Belleza y Bienestar Pruebas",
-      descripcion: "Servicios de cuidado personal para pruebas de reserva.",
+      nombreNegocio: "Aura Estudio de Belleza",
+      descripcion: "Cuidado personal, belleza y bienestar.",
       telefono: "3005550102",
       direccion: "Medellin, Colombia",
-      enlacePersonalizado: "belleza-pruebas-servigo",
+      enlacePersonalizado: "aura-estudio-belleza",
     },
     servicios: [
       ["Manicura semipermanente", "Manicura con esmalte semipermanente.", 45000, 60],
       ["Pedicura spa", "Cuidado de pies con exfoliacion e hidratacion.", 50000, 60],
       ["Limpieza facial", "Limpieza facial profunda y mascarilla.", 65000, 75],
       ["Masaje relajante", "Masaje corporal para liberar tension.", 90000, 60],
-      ["Diseno de cejas", "Perfilado de cejas segun el rostro.", 25000, 30],
+      ["Diseño de cejas", "Perfilado de cejas segun el rostro.", 25000, 30],
     ],
   },
   {
-    email: "gimnasio.pruebas@servigo.test",
-    nombre: "Prestador Pruebas Entrenamiento",
+    equipo: [
+      { email: "gimnasio.pruebas@servigo.test", nombre: "Juan David Pérez", especialidad: "Entrenador personal", calificacionDemo: 4.9, totalCalificacionesDemo: 35 },
+      { email: "gimnasio.pro.2@servigo.test", nombre: "Daniel Ramírez", especialidad: "Instructor de entrenamiento funcional", calificacionDemo: 4.8, totalCalificacionesDemo: 29 },
+      { email: "gimnasio.pro.3@servigo.test", nombre: "Sebastián Ortiz", especialidad: "Instructor de yoga", calificacionDemo: 4.7, totalCalificacionesDemo: 23 },
+      { email: "gimnasio.pro.4@servigo.test", nombre: "Samuel Cárdenas", especialidad: "Preparador físico", calificacionDemo: 4.9, totalCalificacionesDemo: 41 },
+      { email: "gimnasio.pro.5@servigo.test", nombre: "David Moreno", especialidad: "Asesor de acondicionamiento físico", calificacionDemo: 4.6, totalCalificacionesDemo: 18 },
+    ],
     perfil: {
       tipoNegocio: "GIMNASIO",
-      nombreNegocio: "Entrenamiento Pruebas ServiGo",
-      descripcion: "Entrenamiento personalizado y bienestar fisico.",
+      nombreNegocio: "Punto Fit",
+      descripcion: "Entrenamiento personalizado y bienestar físico.",
       telefono: "3005550103",
       direccion: "Cali, Colombia",
-      enlacePersonalizado: "entrenamiento-pruebas-servigo",
+      enlacePersonalizado: "punto-fit",
     },
     servicios: [
       ["Entrenamiento personal", "Sesion individual con plan personalizado.", 60000, 60],
@@ -70,15 +86,20 @@ const catalogos = [
     ],
   },
   {
-    email: "fotografia.pruebas@servigo.test",
-    nombre: "Prestadora Pruebas Fotografia",
+    equipo: [
+      { email: "fotografia.pruebas@servigo.test", nombre: "Lucía Fernández", especialidad: "Fotógrafa de retratos", calificacionDemo: 4.9, totalCalificacionesDemo: 32 },
+      { email: "fotografia.pro.2@servigo.test", nombre: "Gabriela Silva", especialidad: "Fotógrafa familiar", calificacionDemo: 4.8, totalCalificacionesDemo: 27 },
+      { email: "fotografia.pro.3@servigo.test", nombre: "Paula Navarro", especialidad: "Fotógrafa de producto", calificacionDemo: 4.7, totalCalificacionesDemo: 22 },
+      { email: "fotografia.pro.4@servigo.test", nombre: "Daniela Cruz", especialidad: "Fotógrafa de eventos", calificacionDemo: 4.9, totalCalificacionesDemo: 39 },
+      { email: "fotografia.pro.5@servigo.test", nombre: "Elena Ramírez", especialidad: "Fotógrafa de pareja y familia", calificacionDemo: 4.6, totalCalificacionesDemo: 17 },
+    ],
     perfil: {
       tipoNegocio: "FOTOGRAFIA",
-      nombreNegocio: "Fotografia Pruebas ServiGo",
-      descripcion: "Sesiones fotograficas para personas y negocios.",
+      nombreNegocio: "Luz de Autor Fotografía",
+      descripcion: "Sesiones fotográficas para personas y negocios.",
       telefono: "3005550104",
       direccion: "Bogota, Colombia",
-      enlacePersonalizado: "fotografia-pruebas-servigo",
+      enlacePersonalizado: "luz-de-autor-fotografia",
     },
     servicios: [
       ["Retrato profesional", "Sesion de retrato para perfil profesional.", 120000, 60],
@@ -136,10 +157,11 @@ async function seed() {
   }
   await connectDatabase();
   if (soloHorarios) {
-    const users = await Usuario.find({ email: { $in: catalogos.map(({ email }) => email) } })
+    const emails = catalogos.flatMap(({ equipo }) => equipo.map(({ email }) => email));
+    const users = await Usuario.find({ email: { $in: emails } })
       .select("_id email")
       .lean();
-    if (users.length !== catalogos.length) {
+    if (users.length !== emails.length) {
       throw new Error("Faltan cuentas del catalogo de pruebas; no se modificaron horarios.");
     }
 
@@ -147,7 +169,7 @@ async function seed() {
       usuario: { $in: users.map(({ _id }) => _id) },
       activo: true,
     }).select("_id").lean();
-    if (profiles.length !== catalogos.length) {
+    if (profiles.length !== emails.length) {
       throw new Error("Faltan perfiles profesionales activos; no se modificaron horarios.");
     }
 
@@ -159,20 +181,44 @@ async function seed() {
   }
 
   const passwordHash = await bcrypt.hash(testPassword!, 12);
-  await upsertUsuario("cliente.pruebas@servigo.test", "Cliente Pruebas ServiGo", "CLI", passwordHash);
+  await upsertUsuario("cliente.pruebas@servigo.test", "Matías Rojas", "CLI", passwordHash);
 
   const professionalIds = [];
+  const professionalAccounts = [];
   for (const catalog of catalogos) {
-    const user = await upsertUsuario(catalog.email, catalog.nombre, "PRO", passwordHash);
-    const profile = await Profesional.findOneAndUpdate(
-      { usuario: user._id },
-      { $set: { ...catalog.perfil, usuario: user._id, activo: true } },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
-    );
-    professionalIds.push(profile._id);
-    await upsertHorarios(profile._id);
+    if (catalog.equipo.length < PROFESSIONALS_PER_BUSINESS) {
+      throw new Error(`El negocio ${catalog.perfil.nombreNegocio} requiere al menos ${PROFESSIONALS_PER_BUSINESS} profesionales.`);
+    }
 
-    for (const [nombre, descripcion, precio, duracion] of catalog.servicios) {
+    for (const [index, integrante] of catalog.equipo.entries()) {
+      const user = await upsertUsuario(integrante.email, integrante.nombre, "PRO", passwordHash);
+      const enlacePersonalizado = index === 0
+        ? catalog.perfil.enlacePersonalizado
+        : `${catalog.perfil.enlacePersonalizado}-${index + 1}`;
+      const profile = await Profesional.findOneAndUpdate(
+        { usuario: user._id },
+        {
+          $set: {
+            ...catalog.perfil,
+            especialidad: integrante.especialidad,
+            calificacionDemo: integrante.calificacionDemo,
+            totalCalificacionesDemo: integrante.totalCalificacionesDemo,
+            enlacePersonalizado,
+            usuario: user._id,
+            activo: true,
+          },
+        },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      );
+      professionalIds.push(profile._id);
+      professionalAccounts.push({ email: integrante.email, nombre: integrante.nombre, negocio: catalog.perfil.nombreNegocio });
+      await upsertHorarios(profile._id);
+
+      const [nombre, descripcion, precio, duracion] = catalog.servicios[index];
+      await Servicio.updateMany(
+        { profesional: profile._id },
+        { $set: { activo: false } }
+      );
       await Servicio.findOneAndUpdate(
         { profesional: profile._id, nombre },
         { $set: { profesional: profile._id, nombre, descripcion, precio, duracion, activo: true } },
@@ -197,15 +243,15 @@ async function seed() {
       `El catalogo quedo incompleto: se esperaban al menos ${MIN_TEST_SERVICES} servicios activos y se encontraron ${serviceCount}.`
     );
   }
-  if (scheduleCount < catalogos.length * DIAS_SEMANA.length) {
+  if (scheduleCount < professionalIds.length * DIAS_SEMANA.length) {
     throw new Error(
-      `El catalogo quedo incompleto: se esperaban ${catalogos.length * DIAS_SEMANA.length} horarios activos y se encontraron ${scheduleCount}.`
+      `El catalogo quedo incompleto: se esperaban ${professionalIds.length * DIAS_SEMANA.length} horarios activos y se encontraron ${scheduleCount}.`
     );
   }
 
   console.log(JSON.stringify({
     testClient: "cliente.pruebas@servigo.test",
-    testProfessionals: catalogos.map(({ email, perfil }) => ({ email, business: perfil.nombreNegocio })),
+    testProfessionals: professionalAccounts,
     services: serviceCount,
     professionals: professionalCount,
     schedules: scheduleCount,

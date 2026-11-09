@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Types } from "mongoose";
 
-import { ReservaController } from "./reserva.controller";
+import { ReservaController } from "../controllers/reserva.controller";
 import { ReservaService } from "../services/reserva.service";
 
 type MockResponse = {

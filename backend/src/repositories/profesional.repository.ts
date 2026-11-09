@@ -28,10 +28,21 @@ export class ProfesionalRepository {
 
     return profesionales.map((profesional) => {
       const calificacion = porProfesional.get(String(profesional._id));
+      const esCuentaDemo = profesional.usuario?.email?.endsWith("@servigo.test");
+      const tieneCalificacionesReales = Boolean(calificacion?.cantidad);
       return {
         ...profesional,
-        calificacionPromedio: calificacion?.promedio || 0,
-        totalCalificaciones: calificacion?.cantidad || 0,
+        especialidad: profesional.especialidad || "",
+        calificacionPromedio: tieneCalificacionesReales
+          ? calificacion.promedio
+          : esCuentaDemo
+            ? profesional.calificacionDemo || 0
+            : 0,
+        totalCalificaciones: tieneCalificacionesReales
+          ? calificacion.cantidad
+          : esCuentaDemo
+            ? profesional.totalCalificacionesDemo || 0
+            : 0,
       };
     });
   }

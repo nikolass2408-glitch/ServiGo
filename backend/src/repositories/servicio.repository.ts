@@ -6,7 +6,12 @@ export class ServicioRepository {
     const profesionalQuery = profesionalId ? { _id: profesionalId, activo: true } : { activo: true };
     const profesionalesActivos = await Profesional.find(profesionalQuery).distinct("_id");
     return Servicio.find({ profesional: { $in: profesionalesActivos } })
-      .populate("empresa", "nombre tipoNegocio direccion")
+      .populate({
+        path: "profesional",
+        select: "usuario nombreNegocio tipoNegocio especialidad imagen enlacePersonalizado",
+        populate: { path: "usuario", select: "firstName lastName nombre apellido email" },
+      })
+      .populate("empresa", "nombre tipoNegocio direccion horarioEmpresa")
       .lean();
   }
   static buscarPorId(id: string) {

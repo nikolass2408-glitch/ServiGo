@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BriefcaseBusiness, LogOut, MailPlus, Plus, Save, Trash2, Users } from 'lucide-react';
+import { BriefcaseBusiness, Clock3, LogOut, MailPlus, Plus, Save, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
+import { crearHorarioEmpresaEjemplo, DIAS_SEMANA, resumirHorarioEmpresa } from '../../utils/horarioEmpresa';
 import './DashboardDueno.css';
 
 const emptyService = { profesional: '', nombre: '', descripcion: '', precio: '', duracion: '30' };
@@ -12,6 +13,7 @@ export default function DashboardDueno() {
   const [panel, setPanel] = useState(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [newCompany, setNewCompany] = useState(emptyCompany);
+  const [horarioEmpresa, setHorarioEmpresa] = useState(crearHorarioEmpresaEjemplo);
   const [invite, setInvite] = useState({ nombre: '', email: '', telefono: '' });
   const [service, setService] = useState(emptyService);
   const [editingService, setEditingService] = useState('');
@@ -23,12 +25,15 @@ export default function DashboardDueno() {
   const loadPanel = useCallback(async () => {
     const { data } = await API.get('/empresa/panel/');
     setPanel(data);
-    setSelectedCompanyId((current) => current || data.empresas[0]?.empresa?._id || '');
+    const companyId = selectedCompanyId || data.empresas[0]?.empresa?._id || '';
+    setSelectedCompanyId(companyId);
+    const company = data.empresas.find((item) => String(item.empresa._id) === String(companyId));
+    setHorarioEmpresa(company?.empresa.horarioEmpresa || crearHorarioEmpresaEjemplo());
     setService((current) => ({
       ...current,
       profesional: current.profesional || data.empresas[0]?.profesionales.find((item) => item.estado === 'ACTIVA')?._id || ''
     }));
-  }, []);
+  }, [selectedCompanyId]);
 
   useEffect(() => {
     let active = true;
@@ -36,7 +41,9 @@ export default function DashboardDueno() {
       .then(({ data }) => {
         if (active) {
           setPanel(data);
-          setSelectedCompanyId(data.empresas[0]?.empresa?._id || '');
+          const firstCompany = data.empresas[0];
+          setSelectedCompanyId(firstCompany?.empresa?._id || '');
+          setHorarioEmpresa(firstCompany?.empresa?.horarioEmpresa || crearHorarioEmpresaEjemplo());
           setService((current) => ({
             ...current,
             profesional: current.profesional || data.empresas[0]?.profesionales.find((item) => item.estado === 'ACTIVA')?._id || ''
@@ -110,6 +117,7 @@ export default function DashboardDueno() {
       const { data: refreshedPanel } = await API.get('/empresa/panel/');
       setPanel(refreshedPanel);
       setSelectedCompanyId(data._id);
+      setHorarioEmpresa(data.horarioEmpresa || crearHorarioEmpresaEjemplo());
       setService({ ...emptyService, profesional: '' });
       setMessage(`Se creó ${data.nombre}.`);
     } catch (requestError) {
@@ -163,6 +171,22 @@ export default function DashboardDueno() {
   const profesionales = selectedCompany?.profesionales || [];
   const servicios = selectedCompany?.servicios || [];
 
+  const saveCompanyHours = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      await API.patch(`/empresa/${selectedCompanyId}/horario/`, { horarioEmpresa });
+      await loadPanel();
+      setMessage('Horario de atención actualizado.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'No se pudo guardar el horario de la empresa.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) return <main className="company-page"><p>Cargando empresa…</p></main>;
 
   return (
@@ -174,6 +198,8 @@ export default function DashboardDueno() {
             <label className="company-selector">Empresa
               <select value={selectedCompanyId} onChange={(event) => {
                 setSelectedCompanyId(event.target.value);
+                const company = companyPanels.find((item) => String(item.empresa._id) === event.target.value);
+                setHorarioEmpresa(company?.empresa.horarioEmpresa || crearHorarioEmpresaEjemplo());
                 setService({ ...emptyService, profesional: '' });
                 setEditingService('');
                 setError('');
@@ -221,6 +247,66 @@ export default function DashboardDueno() {
             <h1>{selectedCompany.empresa.nombre}</h1>
             <p>{selectedCompany.empresa.descripcion || 'Administra tu equipo profesional y los servicios de tu empresa.'}</p>
             <span className="company-location">{selectedCompany.empresa.direccion} · {selectedCompany.empresa.tipoNegocio}</span>
+            <p className="company-hours-summary"><Clock3 size={15} />{resumirHorarioEmpresa(selectedCompany.empresa.horarioEmpresa)}</p>
+          </section>
+
+          <section className="company-content">
+            <div className="company-section-heading"><div><Clock3 size={19} /><h2>Horario de atención</h2></div></div>
+            <form className="company-card company-form company-hours-form" onSubmit={saveCompanyHours}>
+              <p>Este horario se aplicará junto con la disponibilidad configurada por cada profesional.</p>
+              <label className="company-hours-toggle">
+                <input
+                  type="checkbox"
+                  checked={horarioEmpresa.abierto24Horas}
+                  onChange={(event) => setHorarioEmpresa({ ...horarioEmpresa, abierto24Horas: event.target.checked })}
+                />
+                La empresa atiende 24 horas, todos los días
+              </label>
+              {!horarioEmpresa.abierto24Horas && horarioEmpresa.dias.map((dia) => (
+                <div className="company-hours-day" key={dia.dia}>
+                  <label className="company-hours-open">
+                    <input
+                      type="checkbox"
+                      checked={dia.abierto}
+                      onChange={(event) => setHorarioEmpresa({
+                        ...horarioEmpresa,
+                        dias: horarioEmpresa.dias.map((item) =>
+                          item.dia === dia.dia ? { ...item, abierto: event.target.checked } : item
+                        )
+                      })}
+                    />
+                    {DIAS_SEMANA[dia.dia]}
+                  </label>
+                  <label>Desde
+                    <input
+                      type="time"
+                      value={dia.horaInicio}
+                      disabled={!dia.abierto}
+                      onChange={(event) => setHorarioEmpresa({
+                        ...horarioEmpresa,
+                        dias: horarioEmpresa.dias.map((item) =>
+                          item.dia === dia.dia ? { ...item, horaInicio: event.target.value } : item
+                        )
+                      })}
+                    />
+                  </label>
+                  <label>Hasta
+                    <input
+                      type="time"
+                      value={dia.horaFin}
+                      disabled={!dia.abierto}
+                      onChange={(event) => setHorarioEmpresa({
+                        ...horarioEmpresa,
+                        dias: horarioEmpresa.dias.map((item) =>
+                          item.dia === dia.dia ? { ...item, horaFin: event.target.value } : item
+                        )
+                      })}
+                    />
+                  </label>
+                </div>
+              ))}
+              <button className="company-primary" disabled={busy}><Save size={16} />{busy ? 'Guardando…' : 'Guardar horario'}</button>
+            </form>
           </section>
 
           <section className="company-content">

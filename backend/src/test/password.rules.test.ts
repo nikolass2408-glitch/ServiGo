@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validarPassword } from "./password.rules";
+import { validarPassword } from "../services/password.rules";
 
 test("acepta la contraseña de invitación con mayúscula, minúscula y número", () => {
   assert.equal(validarPassword("ServiGo2026"), undefined);
