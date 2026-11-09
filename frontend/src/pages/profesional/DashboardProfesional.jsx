@@ -3,7 +3,6 @@ import {
   Calendar,
   CheckCircle,
   Eye,
-  LogOut,
   X,
   User,
   Phone,
@@ -232,12 +231,18 @@ export default function DashboardProfesional() {
           <span style={styles.userName}>
             {user?.firstName || 'Profesional'}
           </span>
-          <NotificationBell userId={user?.id} />
-
-          <button type="button" onClick={logout} style={styles.btnLogout}>
-            <LogOut size={16} />
-            Cerrar sesión
-          </button>
+          <NotificationBell
+            userId={user?.id}
+            onNotificationClick={(notification) => {
+              const reservaId = String(notification.reserva?._id || notification.reserva || '');
+              const cita = citas.find((item) => String(item._id || item.id) === reservaId);
+              if (!cita) {
+                throw new Error('No se encontró la cita asociada a esta notificación.');
+              }
+              setActiveSection('agenda');
+              abrirReserva(cita);
+            }}
+          />
 
         </div>
 
@@ -255,6 +260,7 @@ export default function DashboardProfesional() {
             { id: 'servicios', label: 'Mis servicios', icon: 'services' }
           ]}
           onSelect={setActiveSection}
+          onLogout={logout}
         />
 
       <main className="dashboard-main" style={styles.content}>
@@ -785,16 +791,6 @@ const styles = {
   userName: {
     fontSize: '14px',
     fontWeight: '600'
-  },
-
-  btnLogout: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    color: '#ef4444',
-    background: 'transparent',
-    border: 0,
-    cursor: 'pointer'
   },
 
   content: {

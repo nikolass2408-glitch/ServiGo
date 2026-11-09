@@ -72,7 +72,7 @@ La API queda disponible en `http://localhost:3000/api/`. Al abrir esa dirección
 
 ### Cargar el catálogo para pruebas y demostraciones
 
-El catálogo de pruebas crea o actualiza un cliente, cuatro perfiles de prestadores y 20 servicios activos (cinco por prestador). Los servicios quedan guardados en MongoDB, aparecen en **Servicios** para el cliente y en **Servicios** del espacio del prestador. La carga es idempotente: puede ejecutarse de nuevo sin duplicar los registros.
+El catálogo de pruebas crea o actualiza al cliente de prueba Matías Rojas, cinco profesionales por cada uno de los cuatro negocios (20 profesionales en total) y 20 servicios activos (uno distinto por profesional). En cada negocio, cada profesional ofrece uno de los cinco servicios del catálogo, evitando repetir el mismo servicio entre integrantes del mismo equipo. La barbería de prueba se llama **Barbería Matías**; los otros negocios tienen nombres comerciales propios. Cada profesional de prueba tiene nombre, especialidad y una calificación de muestra con estrellas; cuando existan calificaciones reales, estas tienen prioridad. Al reservar, los clientes ven el nombre del profesional que ofrece el servicio. Los servicios quedan guardados en MongoDB, aparecen en **Servicios** para el cliente y en **Servicios** del espacio del prestador. La carga es idempotente: puede ejecutarse de nuevo sin duplicar los registros.
 
 En `backend/.env`, configura una contraseña de prueba de al menos 12 caracteres y autoriza explícitamente la carga:
 

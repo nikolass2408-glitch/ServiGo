@@ -149,6 +149,21 @@
   font-size: 12px;
 }
 
+.company-hours-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 12px 0 0 !important;
+  color: #5b21b6 !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.company-hours-summary svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .company-content {
   margin-top: 34px;
 }
@@ -270,6 +285,44 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.company-hours-form {
+  max-width: 760px;
+}
+
+.company-form .company-hours-toggle,
+.company-form .company-hours-open {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.company-form .company-hours-toggle input,
+.company-form .company-hours-open input {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: #6d28d9;
+}
+
+.company-hours-day {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr);
+  align-items: end;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid #f0edf4;
+}
+
+.company-hours-day .company-hours-open {
+  min-height: 40px;
+}
+
+.company-hours-day input:disabled {
+  background: #f5f4f7;
+  color: #a19aaa;
+  cursor: not-allowed;
 }
 
 .company-primary {

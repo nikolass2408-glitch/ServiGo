@@ -9,6 +9,7 @@ router.post("/invitaciones/aceptar/", EmpresaController.aceptarInvitacion);
 router.get("/invitaciones/:token/", EmpresaController.detalleInvitacion);
 router.get("/empresa/panel/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.panel);
 router.post("/empresa/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.crear);
+router.patch("/empresa/:empresaId/horario/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.actualizarHorario);
 router.post("/empresa/:empresaId/profesionales/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.invitarProfesional);
 
 export default router;

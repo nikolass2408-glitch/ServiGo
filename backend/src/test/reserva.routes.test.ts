@@ -9,7 +9,7 @@ import { createServer, Server } from "node:http";
 import { ROLES, Role } from "../data/roles";
 import { UsuarioRepository } from "../repositories/usuario.repository";
 import { ReservaService } from "../services/reserva.service";
-import reservaRoutes from "./reserva.routes";
+import reservaRoutes from "../routes/reserva.routes";
 
 
 const testSecret = "reserva-routes-test-secret";
