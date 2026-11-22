@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "6b0287fe18c2acda9d74165d"
+  },
+  "nombre": "Barbería ServiGo",
+  "tipo_negocio": "BARBERIA",
+  "descripcion": "Barbería especializada en cuidado y estilo masculino",
+  "telefono": "3001112233",
+  "direccion": "Bogotá",
+  "ciudad": "Bogotá",
+  "activo": true
+}]

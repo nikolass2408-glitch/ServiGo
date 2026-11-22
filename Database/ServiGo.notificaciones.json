@@ -7,4 +7,14 @@
   "tipo": "RESERVA_CONFIRMADA",
   "mensaje": "Tu reserva ha sido confirmada",
   "leida": false
+},
+{
+  "_id": {
+    "$oid": "6b0286f218c2acda9d74164b"
+  },
+  "usuario_id": "ID_USUARIO",
+  "reserva_id": "ID_RESERVA",
+  "tipo": "RESERVA_CONFIRMADA",
+  "mensaje": "Tu reserva ha sido confirmada",
+  "leida": false
 }]

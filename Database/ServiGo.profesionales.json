@@ -11,4 +11,20 @@
   "imagen": "",
   "enlace_personalizado": "barberia-servigo",
   "activo": true
+},
+{
+  "_id": {
+    "$oid": "6ad58d1a09f75e72fb910b02"
+  },
+  "usuario_id": "Wilmar_barbero",
+  "tipo_negocio": "BARBERIA",
+  "nombre_negocio": "Barbería ServiGo",
+  "nombre_profesional": "Wilmar Gomez",
+  "especialidad": "Barbero",
+  "descripcion": "Cortes de cabello para caballero",
+  "telefono": "3001112233",
+  "direccion": "Bogotá",
+  "imagen": "",
+  "calificacion": 4.9,
+  "activo": true
 }]

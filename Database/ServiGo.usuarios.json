@@ -9,4 +9,14 @@
   "telefono": "3000000000",
   "rol": "CLI",
   "activo": true
+},
+{
+  "_id": {
+    "$oid": "6b0285db18c2acda9d741635"
+  },
+  "nombre": "Wilmar",
+  "apellido": "Gomez",
+  "correo": "wilmar@email.com",
+  "rol": "PRO",
+  "activo": true
 }]

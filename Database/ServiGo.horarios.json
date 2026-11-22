@@ -7,4 +7,15 @@
   "hora_inicio": "08:00",
   "hora_fin": "18:00",
   "activo": true
+},
+{
+  "_id": {
+    "$oid": "6b0286ae18c2acda9d741645"
+  },
+  "negocio_id": "ID_NEGOCIO",
+  "profesional_id": "ID_PROFESIONAL",
+  "dia_semana": "LUNES",
+  "hora_inicio": "08:00",
+  "hora_fin": "18:00",
+  "activo": true
 }]
