@@ -1,0 +1,8 @@
+[{
+  "_id": {
+    "$oid": "6b02869818c2acda9d741642"
+  },
+  "profesional_id": "ID_PROFESIONAL",
+  "servicio_id": "ID_SERVICIO",
+  "activo": true
+}]

@@ -1,0 +1,17 @@
+# Dependencias
+**/node_modules/
+
+# Variables de entorno
+**/.env
+
+# Compilación
+**/dist/
+
+# Python antiguo / entorno local
+**/.venv/
+**/__pycache__/
+*.pyc
+*.sqlite3
+
+# VS Code
+.vscode/
