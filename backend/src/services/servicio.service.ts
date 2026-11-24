@@ -7,7 +7,7 @@ export class ServicioService {
   private static async puedeGestionar(profesional: any, actor: any, empresaId?: string) {
     if (actor.rol === ROLES.ADMIN || profesional.usuario.toString() === actor.id) return true;
     if (actor.rol === ROLES.DUENO && empresaId) {
-      return EmpresaService.esMiembroActivo(actor.id, empresaId, profesional._id.toString());
+      return EmpresaService.esMiembro(actor.id, empresaId, profesional._id.toString());
     }
     return false;
   }

@@ -27,6 +27,23 @@ export class EmpresaController {
     ));
   }
 
+  static async aprobarProfesional(req: AuthRequest, res: Response) {
+    res.json(await EmpresaService.aprobarProfesional(
+      String(req.user?.id),
+      String(req.params.empresaId),
+      String(req.params.profesionalId)
+    ));
+  }
+
+  static async cambiarEstadoProfesional(req: AuthRequest, res: Response) {
+    res.json(await EmpresaService.cambiarEstadoProfesional(
+      String(req.user?.id),
+      String(req.params.empresaId),
+      String(req.params.profesionalId),
+      req.body?.activo
+    ));
+  }
+
   static async aceptarInvitacion(req: Request, res: Response) {
     await EmpresaService.aceptarInvitacion(req.body?.token, req.body?.password);
     res.json({ message: "Cuenta activada. Ya puedes iniciar sesión." });

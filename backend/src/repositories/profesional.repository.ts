@@ -5,7 +5,9 @@ import { ESTADOS_RESERVA } from "../data/estadosReserva";
 export class ProfesionalRepository {
   static async listarTodos() {
     const [profesionales, calificaciones] = await Promise.all([
-      Profesional.find().populate("usuario", "-password").lean(),
+      Profesional.find()
+        .populate<{ usuario: { email?: string } }>("usuario", "-password")
+        .lean(),
       Reserva.aggregate([
         {
           $match: {

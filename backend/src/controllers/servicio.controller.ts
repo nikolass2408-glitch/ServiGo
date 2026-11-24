@@ -25,7 +25,7 @@ export class ServicioController {
       req.user?.rol !== ROLES.ADMIN &&
       profesional.usuario.toString() !== req.user?.id &&
       !(req.user?.rol === ROLES.DUENO && req.query.empresa &&
-        await EmpresaService.esMiembroActivo(String(req.user?.id), String(req.query.empresa), profesionalId))
+        await EmpresaService.esMiembro(String(req.user?.id), String(req.query.empresa), profesionalId))
     ) {
       res.status(403).json({ error: "No tienes permisos para gestionar estos servicios." });
       return;

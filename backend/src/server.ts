@@ -12,7 +12,7 @@ async function startServer() {
   await connectDatabase();
   iniciarProgramadorRecordatorios();
   
-  const app = (await import("./app")).default;
+  const app = require("./app").default;
 
   app.listen(PORT, () => {
     console.log(`ServiGo API ejecutándose en http://localhost:${PORT}`);

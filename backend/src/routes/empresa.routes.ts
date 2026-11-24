@@ -11,5 +11,7 @@ router.get("/empresa/panel/", authenticateToken, authorizeRoles(ROLES.DUENO), Em
 router.post("/empresa/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.crear);
 router.patch("/empresa/:empresaId/horario/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.actualizarHorario);
 router.post("/empresa/:empresaId/profesionales/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.invitarProfesional);
+router.patch("/empresa/:empresaId/profesionales/:profesionalId/aprobar/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.aprobarProfesional);
+router.patch("/empresa/:empresaId/profesionales/:profesionalId/estado/", authenticateToken, authorizeRoles(ROLES.DUENO), EmpresaController.cambiarEstadoProfesional);
 
 export default router;

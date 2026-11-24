@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BriefcaseBusiness, Clock3, LogOut, MailPlus, Plus, Save, Trash2, Users } from 'lucide-react';
+import { BriefcaseBusiness, Check, Clock3, MailPlus, Plus, Save, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
+import DashboardSidebar from '../../components/DashboardSidebar';
 import { crearHorarioEmpresaEjemplo, DIAS_SEMANA, resumirHorarioEmpresa } from '../../utils/horarioEmpresa';
 import './DashboardDueno.css';
 
@@ -11,12 +12,14 @@ const emptyCompany = { nombre: '', tipoNegocio: 'OTRO', telefono: '', direccion:
 export default function DashboardDueno() {
   const { user, logout } = useAuth();
   const [panel, setPanel] = useState(null);
+  const [activeSection, setActiveSection] = useState('resumen');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [newCompany, setNewCompany] = useState(emptyCompany);
   const [horarioEmpresa, setHorarioEmpresa] = useState(crearHorarioEmpresaEjemplo);
   const [invite, setInvite] = useState({ nombre: '', email: '', telefono: '' });
   const [service, setService] = useState(emptyService);
   const [editingService, setEditingService] = useState('');
+  const [serviceView, setServiceView] = useState('active');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,9 +71,48 @@ export default function DashboardDueno() {
       const { data } = await API.post(`/empresa/${selectedCompanyId}/profesionales/`, invite);
       setInvite({ nombre: '', email: '', telefono: '' });
       await loadPanel();
-      setMessage(`Invitación enviada a ${data.email}.`);
+      setMessage(`Invitación creada para ${data.email}. Aprueba al profesional desde esta lista cuando quieras activarlo.`);
     } catch (requestError) {
       setError(requestError.response?.data?.error || 'No se pudo invitar al profesional.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const approveProfessional = async (professional) => {
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const { data } = await API.patch(
+        `/empresa/${selectedCompanyId}/profesionales/${professional._id}/aprobar/`
+      );
+      await loadPanel();
+      setMessage(data.disponibilidadConfigurada
+        ? data.horariosCreados
+          ? `Profesional aprobado y activado. Se configuraron ${data.horariosCreados} días; sus servicios activos ya pueden recibir reservas.`
+          : 'Profesional aprobado y activado. Se conservaron sus horarios; sus servicios activos ya pueden recibir reservas.'
+        : 'Profesional aprobado y activado. Configura su disponibilidad para que sus servicios puedan recibir reservas.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'No se pudo aprobar al profesional.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleProfessionalAccount = async (professional) => {
+    const shouldActivate = !professional.usuario?.activo;
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      await API.patch(`/empresa/${selectedCompanyId}/profesionales/${professional._id}/estado/`, {
+        activo: shouldActivate
+      });
+      await loadPanel();
+      setMessage(shouldActivate ? 'Cuenta profesional activada.' : 'Cuenta profesional desactivada.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'No se pudo cambiar el estado de la cuenta.');
     } finally {
       setBusy(false);
     }
@@ -170,6 +212,18 @@ export default function DashboardDueno() {
   const selectedCompany = companyPanels.find((item) => String(item.empresa._id) === String(selectedCompanyId));
   const profesionales = selectedCompany?.profesionales || [];
   const servicios = selectedCompany?.servicios || [];
+  const profesionalesActivos = profesionales.filter((item) => ['ACTIVA', 'APROBADA'].includes(item.estado)).length;
+  const invitacionesPendientes = profesionales.filter((item) => item.estado === 'PENDIENTE').length;
+  const serviciosActivos = servicios.filter((item) => item.activo).length;
+  const serviciosInactivos = servicios.filter((item) => !item.activo).length;
+  const serviciosVisibles = servicios.filter((item) => serviceView === 'active' ? item.activo : !item.activo);
+
+  const navegarA = (section) => {
+    setActiveSection(section);
+    requestAnimationFrame(() => {
+      document.getElementById(`owner-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   const saveCompanyHours = async (event) => {
     event.preventDefault();
@@ -190,7 +244,7 @@ export default function DashboardDueno() {
   if (loading) return <main className="company-page"><p>Cargando empresa…</p></main>;
 
   return (
-    <main className="company-page">
+    <div className="company-page">
       <header className="company-topbar">
         <div className="company-brand"><span><BriefcaseBusiness size={20} /></span><div><strong>ServiGo Empresa</strong><small>Panel del dueño</small></div></div>
         <div className="company-user">
@@ -209,16 +263,31 @@ export default function DashboardDueno() {
               </select>
             </label>
           )}
-          <span>{nombreDueno}</span><button type="button" onClick={logout}><LogOut size={16} /> Cerrar sesión</button>
+          <span className="company-user-name">{nombreDueno}</span>
         </div>
       </header>
 
-      {error && <p className="company-alert" role="alert">{error}</p>}
-      {message && <p className="company-success" role="status">{message}</p>}
+      <div className="dashboard-layout company-layout">
+        <DashboardSidebar
+          role="Dueño de empresa"
+          userName={nombreDueno}
+          activeId={activeSection}
+          items={[
+            { id: 'resumen', label: 'Resumen', icon: 'overview' },
+            { id: 'horario', label: 'Horario', icon: 'agenda' },
+            { id: 'equipo', label: 'Equipo', icon: 'users', count: profesionales.length },
+            { id: 'servicios', label: 'Servicios', icon: 'services', count: serviciosActivos }
+          ]}
+          onSelect={navegarA}
+          onLogout={logout}
+        />
+        <main className="dashboard-main company-main">
+          {error && <p className="company-alert" role="alert">{error}</p>}
+          {message && <p className="company-success" role="status">{message}</p>}
 
-      {panel && (
-        <>
-          <section className="company-content">
+          {panel && (
+            <>
+              <section className="company-content company-create-section">
             <details className="company-card company-create-details">
               <summary><Plus size={16} /> Crear otra empresa</summary>
               <form className="company-form company-create-form" onSubmit={createCompany}>
@@ -234,15 +303,15 @@ export default function DashboardDueno() {
                 <button className="company-primary" disabled={busy}><Plus size={16} /> Crear empresa</button>
               </form>
             </details>
-          </section>
+              </section>
 
-          {!selectedCompany && (
-            <section className="company-content">
-              <div className="company-card company-empty">Crea tu primera empresa para registrar profesionales y servicios.</div>
-            </section>
-          )}
-          {selectedCompany && <>
-          <section className="company-intro">
+              {!selectedCompany && (
+                <section className="company-content">
+                  <div className="company-card company-empty">Crea tu primera empresa para registrar profesionales y servicios.</div>
+                </section>
+              )}
+              {selectedCompany && <>
+          <section className="company-intro" id="owner-resumen">
             <span className="company-kicker">ADMINISTRACIÓN DE EMPRESA</span>
             <h1>{selectedCompany.empresa.nombre}</h1>
             <p>{selectedCompany.empresa.descripcion || 'Administra tu equipo profesional y los servicios de tu empresa.'}</p>
@@ -250,7 +319,13 @@ export default function DashboardDueno() {
             <p className="company-hours-summary"><Clock3 size={15} />{resumirHorarioEmpresa(selectedCompany.empresa.horarioEmpresa)}</p>
           </section>
 
-          <section className="company-content">
+          <section className="company-overview" aria-label="Resumen de la empresa">
+            <article className="company-metric"><span className="company-metric-icon"><Users size={18} /></span><div><span>Profesionales activos</span><strong>{profesionalesActivos}</strong></div></article>
+            <article className="company-metric"><span className="company-metric-icon is-pending"><MailPlus size={18} /></span><div><span>Invitaciones pendientes</span><strong>{invitacionesPendientes}</strong></div></article>
+            <article className="company-metric"><span className="company-metric-icon is-service"><BriefcaseBusiness size={18} /></span><div><span>Servicios activos</span><strong>{serviciosActivos}</strong></div></article>
+          </section>
+
+          <section className="company-content" id="owner-horario">
             <div className="company-section-heading"><div><Clock3 size={19} /><h2>Horario de atención</h2></div></div>
             <form className="company-card company-form company-hours-form" onSubmit={saveCompanyHours}>
               <p>Este horario se aplicará junto con la disponibilidad configurada por cada profesional.</p>
@@ -309,12 +384,12 @@ export default function DashboardDueno() {
             </form>
           </section>
 
-          <section className="company-content">
+          <section className="company-content" id="owner-equipo">
             <div className="company-section-heading"><div><Users size={19} /><h2>Profesionales</h2></div><span>{profesionales.length} integrantes</span></div>
             <div className="company-team">
               <form className="company-card company-form" onSubmit={sendInvite}>
                 <h3><MailPlus size={18} /> Invitar profesional</h3>
-                <p>Enviaremos un enlace para que acepte la invitación. Si no tiene cuenta profesional, podrá crear su contraseña.</p>
+                <p>Agrega al profesional y apruébalo desde esta lista para habilitarlo en tu empresa.</p>
                 <label>Nombre completo<input value={invite.nombre} onChange={(event) => setInvite({ ...invite, nombre: event.target.value })} required /></label>
                 <label>Correo electrónico<input type="email" value={invite.email} onChange={(event) => setInvite({ ...invite, email: event.target.value })} required /></label>
                 <label>Teléfono<input type="tel" value={invite.telefono} onChange={(event) => setInvite({ ...invite, telefono: event.target.value })} /></label>
@@ -328,25 +403,44 @@ export default function DashboardDueno() {
                       <strong>{[item.usuario?.firstName, item.usuario?.lastName].filter(Boolean).join(' ') || 'Profesional'}</strong>
                       <span>{item.usuario?.email}</span>
                     </div>
-                    <span className={`company-status ${item.estado === 'ACTIVA' ? 'is-active' : 'is-pending'}`}>
-                      {item.estado === 'ACTIVA' ? 'Profesional activo' : 'Invitación pendiente'}
+                    <span className={`company-status ${item.estado === 'PENDIENTE' ? 'is-pending' : item.estado === 'APROBADA' ? 'is-approved' : item.usuario?.activo ? 'is-active' : 'is-pending'}`}>
+                      {item.estado === 'PENDIENTE' ? 'Invitación pendiente' : item.estado === 'APROBADA' ? 'Aprobado por ti' : item.usuario?.activo ? 'Cuenta activa' : 'Cuenta desactivada'}
                     </span>
+                    {['PENDIENTE', 'APROBADA'].includes(item.estado) && (
+                      <button className="company-primary company-approve-button" type="button" disabled={busy} onClick={() => approveProfessional(item)}>
+                        <Check size={15} />{item.estado === 'PENDIENTE' ? 'Aprobar sin código' : 'Preparar reservas'}
+                      </button>
+                    )}
+                    {item.estado !== 'PENDIENTE' && (
+                      <button
+                        className={item.usuario?.activo ? 'company-secondary company-account-toggle' : 'company-primary company-account-toggle'}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => toggleProfessionalAccount(item)}
+                      >
+                        {item.usuario?.activo ? 'Desactivar cuenta' : 'Activar cuenta'}
+                      </button>
+                    )}
                   </article>
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="company-content">
-            <div className="company-section-heading"><div><BriefcaseBusiness size={19} /><h2>Servicios de la empresa</h2></div><span>{servicios.length} servicios</span></div>
+          <section className="company-content" id="owner-servicios">
+            <div className="company-section-heading"><div><BriefcaseBusiness size={19} /><h2>Servicios de la empresa</h2></div><span>{serviciosActivos} activos · {serviciosInactivos} inactivos</span></div>
+            <div className="company-service-filter" role="group" aria-label="Filtrar servicios">
+              <button type="button" className={serviceView === 'active' ? 'is-selected' : ''} onClick={() => setServiceView('active')}>Activos <span>{serviciosActivos}</span></button>
+              <button type="button" className={serviceView === 'inactive' ? 'is-selected' : ''} onClick={() => setServiceView('inactive')}>Inactivos <span>{serviciosInactivos}</span></button>
+            </div>
             <div className="company-services">
               <form className="company-card company-form" onSubmit={saveService}>
                 <h3><Plus size={18} /> {editingService ? 'Editar servicio' : 'Registrar servicio'}</h3>
-                <p>Asigna cada servicio a un profesional de tu equipo.</p>
+                <p>Los servicios activos se podrán reservar cuando el profesional tenga disponibilidad activa.</p>
                 <label>Profesional responsable
                   <select value={service.profesional} onChange={(event) => setService({ ...service, profesional: event.target.value })} required disabled={Boolean(editingService)}>
                     <option value="">Selecciona un profesional</option>
-                    {profesionales.map((item) => <option key={item._id} value={item._id} disabled={item.estado !== 'ACTIVA'}>{[item.usuario?.firstName, item.usuario?.lastName].filter(Boolean).join(' ')}{item.estado === 'ACTIVA' ? '' : ' (invitación pendiente)'}</option>)}
+                    {profesionales.map((item) => <option key={item._id} value={item._id}>{[item.usuario?.firstName, item.usuario?.lastName].filter(Boolean).join(' ')}{item.estado === 'PENDIENTE' ? ' (invitación pendiente)' : item.estado === 'APROBADA' ? ' (aprobado)' : ''}</option>)}
                   </select>
                 </label>
                 <label>Nombre del servicio<input value={service.nombre} onChange={(event) => setService({ ...service, nombre: event.target.value })} required /></label>
@@ -355,11 +449,11 @@ export default function DashboardDueno() {
                   <label>Precio (COP)<input type="number" min="0" step="100" value={service.precio} onChange={(event) => setService({ ...service, precio: event.target.value })} required /></label>
                   <label>Duración (minutos)<input type="number" min="1" value={service.duracion} onChange={(event) => setService({ ...service, duracion: event.target.value })} required /></label>
                 </div>
-                <button className="company-primary" disabled={busy || (!editingService && !profesionales.some((item) => item.estado === 'ACTIVA'))}><Save size={16} />{busy ? 'Guardando…' : 'Guardar servicio'}</button>
+                <button className="company-primary" disabled={busy || (!editingService && !profesionales.some((item) => ['ACTIVA', 'APROBADA'].includes(item.estado)))}><Save size={16} />{busy ? 'Guardando…' : 'Guardar servicio'}</button>
                 {editingService && <button className="company-secondary" type="button" onClick={() => { setEditingService(''); setService(emptyService); }}>Cancelar edición</button>}
               </form>
               <div className="company-service-list">
-                {servicios.length === 0 ? <p className="company-empty">Todavía no hay servicios registrados.</p> : servicios.map((item) => (
+                {serviciosVisibles.length === 0 ? <p className="company-empty">{serviceView === 'active' ? 'No tienes servicios activos.' : 'No hay servicios inactivos.'}</p> : serviciosVisibles.map((item) => (
                   <article className="company-card company-service-card" key={item._id}>
                     <div className="company-service-title">
                       <div><h3>{item.nombre}</h3><p>{[item.profesional?.usuario?.firstName, item.profesional?.usuario?.lastName].filter(Boolean).join(' ') || 'Profesional'}</p></div>
@@ -370,7 +464,7 @@ export default function DashboardDueno() {
                     <div className="company-service-actions">
                       <button className="company-secondary" type="button" onClick={() => editService(item)}>Editar</button>
                       <button className="company-secondary" type="button" disabled={busy} onClick={() => toggleService(item)}>{item.activo ? 'Desactivar' : 'Activar'}</button>
-                      {item.activo && <button className="company-danger" type="button" disabled={busy} onClick={() => deleteService(item)}><Trash2 size={14} /> Quitar</button>}
+                      {item.activo && <button className="company-danger" type="button" disabled={busy} onClick={() => deleteService(item)}><Trash2 size={14} /> Eliminar</button>}
                     </div>
                   </article>
                 ))}
@@ -378,8 +472,10 @@ export default function DashboardDueno() {
             </div>
           </section>
           </>}
-        </>
-      )}
-    </main>
+            </>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }

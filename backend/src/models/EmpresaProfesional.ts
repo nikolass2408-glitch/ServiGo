@@ -3,7 +3,7 @@ import { Document, model, Schema, Types } from "mongoose";
 export interface IEmpresaProfesional extends Document {
   empresa: Types.ObjectId;
   profesional: Types.ObjectId;
-  estado: "PENDIENTE" | "ACTIVA";
+  estado: "PENDIENTE" | "APROBADA" | "ACTIVA";
   invitacionTokenHash: string;
   invitacionExpira: Date;
 }
@@ -12,7 +12,7 @@ const empresaProfesionalSchema = new Schema<IEmpresaProfesional>(
   {
     empresa: { type: Schema.Types.ObjectId, ref: "Empresa", required: true },
     profesional: { type: Schema.Types.ObjectId, ref: "Profesional", required: true },
-    estado: { type: String, enum: ["PENDIENTE", "ACTIVA"], default: "PENDIENTE" },
+    estado: { type: String, enum: ["PENDIENTE", "APROBADA", "ACTIVA"], default: "PENDIENTE" },
     invitacionTokenHash: { type: String, required: true, select: false },
     invitacionExpira: { type: Date, required: true, select: false },
   },

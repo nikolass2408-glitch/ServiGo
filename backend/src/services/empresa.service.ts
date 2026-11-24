@@ -5,8 +5,8 @@ import { EmpresaProfesional } from "../models/EmpresaProfesional";
 import { Profesional } from "../models/Profesional";
 import { Servicio } from "../models/Servicio";
 import { Usuario } from "../models/Usuario";
+import { Horario } from "../models/Horario";
 import { ROLES } from "../data/roles";
-import { MailService } from "./mail.service";
 import { validarPassword } from "./password.rules";
 import { HORARIO_EMPRESA_EJEMPLO, validarHorarioEmpresa } from "./empresa.horario";
 
@@ -81,9 +81,6 @@ export class EmpresaService {
   static async invitarProfesional(duenoId: string, empresaId: string, datos: any) {
     const empresa = await Empresa.findOne({ _id: empresaId, dueno: duenoId, activo: true });
     if (!empresa) throw errorConEstado("No se encontró esta empresa en tu cuenta.", 404);
-    if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-      throw errorConEstado("Configura MAIL_USER y MAIL_PASS para enviar invitaciones.", 503);
-    }
 
     const nombre = String(datos?.nombre || "").trim();
     const email = String(datos?.email || "").trim().toLowerCase();
@@ -158,13 +155,6 @@ export class EmpresaService {
         invitacionTokenHash: tokenHash,
         invitacionExpira,
       });
-      const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
-      await MailService.enviarInvitacionProfesional(
-        email,
-        nombre,
-        empresa.nombre,
-        `${frontendUrl}/activar-invitacion?token=${encodeURIComponent(token)}`
-      );
     } catch (error) {
       if (membresia) await membresia.deleteOne();
       if (profesionalNuevo) await Profesional.deleteOne({ _id: profesional._id });
@@ -172,7 +162,107 @@ export class EmpresaService {
       throw error;
     }
 
-    return { id: profesional._id, nombre, email, estado: "PENDIENTE", invitacionExpira };
+    return {
+      id: profesional._id,
+      nombre,
+      email,
+      estado: "PENDIENTE",
+      invitacionExpira,
+    };
+  }
+
+  static async aprobarProfesional(duenoId: string, empresaId: string, profesionalId: string) {
+    const empresa = await this.empresaDelDueno(duenoId, empresaId);
+    const membresia = await EmpresaProfesional.findOne({
+      empresa: empresa._id,
+      profesional: profesionalId,
+      estado: { $in: ["PENDIENTE", "APROBADA"] },
+    }).populate({ path: "profesional", populate: { path: "usuario" } });
+    if (!membresia || !membresia.profesional || typeof membresia.profesional === "string") {
+      throw errorConEstado("No se encontró una invitación pendiente para este profesional.", 404);
+    }
+
+    const profesional = membresia.profesional as any;
+    const usuario = profesional.usuario as InstanceType<typeof Usuario>;
+    if (!usuario || typeof usuario === "string" || usuario.rol !== ROLES.PRO) {
+      throw errorConEstado("La cuenta profesional asociada a esta invitación no está disponible.", 409);
+    }
+
+    const aprobada = await EmpresaProfesional.findOneAndUpdate(
+      { _id: membresia._id, estado: { $in: ["PENDIENTE", "APROBADA"] } },
+      {
+        $set: { estado: "ACTIVA" },
+        $unset: { invitacionTokenHash: 1, invitacionExpira: 1 },
+      },
+      { new: true }
+    );
+    if (!aprobada) {
+      throw errorConEstado("La invitación ya fue procesada.", 409);
+    }
+
+    profesional.activo = true;
+    await profesional.save();
+
+    const horariosExistentes = await Horario.countDocuments({ profesional: profesional._id });
+    let horariosCreados = 0;
+    if (horariosExistentes === 0) {
+      const horarioEmpresa = empresa.horarioEmpresa || HORARIO_EMPRESA_EJEMPLO;
+      const horariosIniciales = horarioEmpresa.dias
+        .filter((dia: any) => horarioEmpresa.abierto24Horas || dia.abierto)
+        .map((dia: any) => ({
+          profesional: profesional._id,
+          dia: dia.dia,
+          horaInicio: horarioEmpresa.abierto24Horas ? "00:00" : dia.horaInicio,
+          horaFin: horarioEmpresa.abierto24Horas ? "23:59" : dia.horaFin,
+          activo: true,
+        }));
+      if (horariosIniciales.length) {
+        await Horario.insertMany(horariosIniciales);
+        horariosCreados = horariosIniciales.length;
+      }
+    }
+    const disponibilidadConfigurada = Boolean(await Horario.exists({
+      profesional: profesional._id,
+      activo: true,
+    }));
+
+    return {
+      id: profesional._id,
+      email: usuario.email,
+      estado: "ACTIVA",
+      horariosCreados,
+      disponibilidadConfigurada,
+    };
+  }
+
+  static async cambiarEstadoProfesional(
+    duenoId: string,
+    empresaId: string,
+    profesionalId: string,
+    activo: unknown
+  ) {
+    if (typeof activo !== "boolean") {
+      throw errorConEstado("El estado debe ser activo o inactivo.", 400);
+    }
+    const empresa = await this.empresaDelDueno(duenoId, empresaId);
+    const membresia = await EmpresaProfesional.findOne({
+      empresa: empresa._id,
+      profesional: profesionalId,
+    });
+    if (!membresia) {
+      throw errorConEstado("Este profesional no pertenece a tu empresa.", 404);
+    }
+    if (activo && membresia.estado === "PENDIENTE") {
+      throw errorConEstado("Primero aprueba al profesional desde la lista del equipo.", 409);
+    }
+
+    const profesional = await Profesional.findById(profesionalId);
+    if (!profesional) throw errorConEstado("No se encontró el perfil profesional.", 404);
+    profesional.activo = activo;
+    await profesional.save();
+    await Usuario.updateOne({ _id: profesional.usuario }, { $set: { activo } });
+
+    return { id: profesional._id, activo };
   }
 
   static async aceptarInvitacion(token: unknown, password: unknown) {
@@ -183,7 +273,7 @@ export class EmpresaService {
     const membresia = await EmpresaProfesional.findOne({
       invitacionTokenHash: tokenHash,
       invitacionExpira: { $gt: new Date() },
-      estado: "PENDIENTE",
+      estado: { $in: ["PENDIENTE", "APROBADA"] },
     }).select("+invitacionTokenHash +invitacionExpira").populate({
       path: "profesional",
       populate: { path: "usuario" },
@@ -209,7 +299,7 @@ export class EmpresaService {
     const aceptada = await EmpresaProfesional.findOneAndUpdate(
       {
         _id: membresia._id,
-        estado: "PENDIENTE",
+        estado: { $in: ["PENDIENTE", "APROBADA"] },
         invitacionTokenHash: tokenHash,
         invitacionExpira: { $gt: new Date() },
       },
@@ -242,7 +332,7 @@ export class EmpresaService {
     const membresia = await EmpresaProfesional.findOne({
       invitacionTokenHash: tokenHash,
       invitacionExpira: { $gt: new Date() },
-      estado: "PENDIENTE",
+      estado: { $in: ["PENDIENTE", "APROBADA"] },
     }).select("+invitacionTokenHash +invitacionExpira")
       .populate("empresa", "nombre")
       .populate({ path: "profesional", populate: { path: "usuario", select: "firstName lastName email activo" } });
@@ -272,6 +362,15 @@ export class EmpresaService {
       empresa: empresa._id,
       profesional: profesionalId,
       estado: "ACTIVA",
+    }));
+  }
+
+  static async esMiembro(duenoId: string, empresaId: string, profesionalId: string) {
+    const empresa = await this.empresaDelDueno(duenoId, empresaId);
+    return Boolean(await EmpresaProfesional.exists({
+      empresa: empresa._id,
+      profesional: profesionalId,
+      estado: { $in: ["ACTIVA", "APROBADA", "PENDIENTE"] },
     }));
   }
 }

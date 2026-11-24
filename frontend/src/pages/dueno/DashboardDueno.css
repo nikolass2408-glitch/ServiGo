@@ -28,7 +28,80 @@
 
 .company-topbar {
   width: min(1200px, 100%);
-  margin: 0 auto 34px;
+  margin: 0 auto 18px;
+}
+
+.company-layout {
+  width: min(1500px, 100%);
+  padding-top: 12px;
+}
+
+.company-main {
+  min-width: 0;
+  padding: 8px 0 32px;
+}
+
+.company-create-section {
+  margin-top: 0;
+  margin-bottom: 22px;
+}
+
+.company-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: min(1200px, 100%);
+  margin: 0 auto;
+}
+
+.company-metric {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 84px;
+  padding: 14px 16px;
+  border: 1px solid #e6e2eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.company-metric-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 10px;
+  background: #e9f7f1;
+  color: #167653;
+}
+
+.company-metric-icon.is-pending {
+  background: #fff4e5;
+  color: #a45b08;
+}
+
+.company-metric-icon.is-service {
+  background: #edf2ff;
+  color: #405ca8;
+}
+
+.company-metric div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.company-metric div span {
+  color: #746d7f;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.company-metric strong {
+  color: #292338;
+  font-size: 21px;
+  line-height: 1.1;
 }
 
 .company-brand,
@@ -408,9 +481,76 @@
   color: #15803d;
 }
 
+.company-status.is-approved {
+  background: #e8f5f2;
+  color: #08745d;
+}
+
 .company-status.is-pending {
   background: #fff7ed;
   color: #c2410c;
+}
+
+.company-approve-button {
+  min-height: 36px;
+  margin-left: auto;
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.company-account-toggle {
+  min-height: 36px;
+  margin-left: auto;
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.company-service-filter {
+  display: inline-flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 0 14px;
+  padding: 4px;
+  border: 1px solid #e6e2eb;
+  border-radius: 10px;
+  background: #f0eef3;
+}
+
+.company-service-filter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #716980;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.company-service-filter button.is-selected {
+  background: #fff;
+  color: #4c1d95;
+  box-shadow: 0 1px 3px rgba(34, 20, 52, .12);
+}
+
+.company-service-filter button span {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 10px;
+  background: #e8e4ed;
+  font-size: 10px;
+}
+
+.company-service-filter button.is-selected span {
+  background: #f1e9fb;
+  color: #5b21b6;
 }
 
 .company-service-title {
@@ -488,6 +628,14 @@
     flex-wrap: wrap;
   }
 
+  .company-layout {
+    padding-top: 8px;
+  }
+
+  .company-main {
+    padding-top: 0;
+  }
+
   .company-user {
     justify-content: space-between;
     width: 100%;
@@ -509,6 +657,10 @@
 
   .company-person {
     flex-wrap: wrap;
+  }
+
+  .company-overview {
+    grid-template-columns: 1fr;
   }
 
   .company-status {
